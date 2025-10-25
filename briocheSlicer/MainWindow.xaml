@@ -1,0 +1,16 @@
+﻿<Window x:Class="briocheSlicer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:Helix="clr-namespace:HelixToolkit.Wpf;assembly=HelixToolkit.Wpf"
+        Title="Helix HelloWorld" Height="450" Width="800">
+    <Grid>
+        <Helix:HelixViewport3D ZoomExtentsWhenLoaded="True">
+            <!-- A light so we can see the 3D object -->
+            <Helix:SunLight/>
+
+            <!-- A simple 3D object: e.g., a cube -->
+            <Helix:BoxVisual3D Center="0 0 0" Width="1" Height="1" Length="1"
+                               Fill="Orange"/>
+        </Helix:HelixViewport3D>
+    </Grid>
+</Window>
