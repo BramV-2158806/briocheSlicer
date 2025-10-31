@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using briocheSlicer.Workers;
 
 namespace briocheSlicer
 {
@@ -19,9 +20,12 @@ namespace briocheSlicer
     /// </summary>
     public partial class MainWindow : Window
     {
+        private TheSlicer slicer;
+
         public MainWindow()
         {
             InitializeComponent();
+            slicer = new TheSlicer();
         }
 
         /// <summary>
@@ -45,7 +49,7 @@ namespace briocheSlicer
             {
                 try
                 {
-                    Model3DGroup group = Add_Model_To_Scene(dlg.FileName);
+                    Model3DGroup group = Show_Model_And_Slice_Plane(dlg.FileName);
                 }
                 catch (Exception ex)
                 {
@@ -70,9 +74,26 @@ namespace briocheSlicer
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length > 0 && files[0].EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
                 {
-                    Model3DGroup group = Add_Model_To_Scene(files[0]);
+                    Model3DGroup group = Show_Model_And_Slice_Plane(files[0]);
                 }
             }
+        }
+
+        /// <summary>
+        /// Adds the model to the scene and a slicing plane.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns>
+        /// The group of models, 
+        /// now containting the model itself and a slicing plane
+        /// </returns>
+        private Model3DGroup Show_Model_And_Slice_Plane(string filename)
+        {
+            Model3DGroup group = Add_Model_To_Scene(filename);
+            GeometryModel3D slicingPlane = slicer.Create_Slicing_plane(group.Bounds);
+
+            group.Children.Add(slicingPlane);
+            return group;
         }
 
         /// <summary>
