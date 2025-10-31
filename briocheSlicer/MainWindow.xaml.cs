@@ -45,13 +45,7 @@ namespace briocheSlicer
             {
                 try
                 {
-                    // Read stl file
-                    var reader = new StLReader();
-                    Model3DGroup model = reader.Read(dlg.FileName);
-
-                    // Set the xaml variable to the model we just loaded.
-                    ModelHost.Content = model;
-                    View.ZoomExtents();
+                    Model3DGroup group = Add_Model_To_Scene(dlg.FileName);
                 }
                 catch (Exception ex)
                 {
@@ -76,12 +70,31 @@ namespace briocheSlicer
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length > 0 && files[0].EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Read file and set as model.
-                    var reader = new StLReader();
-                    ModelHost.Content = reader.Read(files[0]);
-                    View.ZoomExtents();
+                    Model3DGroup group = Add_Model_To_Scene(files[0]);
                 }
             }
+        }
+
+        /// <summary>
+        /// Adds the model to the scene and returns the modelgroup added to the scene.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns>The model group set as scene content.</returns>
+        private Model3DGroup Add_Model_To_Scene(string filename)
+        {
+            // Read stl file
+            var reader = new StLReader();
+            Model3DGroup model = reader.Read(filename);
+
+            // Set the xaml variable to the model we just loaded.
+            var group = new Model3DGroup();
+            group.Children.Add(model);
+
+            // Add model to the scene
+            scene.Content = group;
+            View.ZoomExtents();
+
+            return group;
         }
     }
 }

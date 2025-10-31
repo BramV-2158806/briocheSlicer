@@ -7,11 +7,12 @@
         <ToolBar DockPanel.Dock="Top">
             <Button Content="Open STL..." Click="OpenStl_Click" />
         </ToolBar>
+        <!--Allow drag and drop and define event handler-->
         <Helix:HelixViewport3D ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
             <Helix:SunLight/>
 
             <!--This is the parameter we need to change in c#-->
-            <ModelVisual3D x:Name="ModelHost" /> 
+            <ModelVisual3D x:Name="scene" /> 
             
         </Helix:HelixViewport3D>
     </DockPanel>

@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Clipper2" Version="1.5.4" />
     <PackageReference Include="HelixToolkit.Wpf" Version="2.27.3" />
   </ItemGroup>
 
