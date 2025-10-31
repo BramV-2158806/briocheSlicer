@@ -7,7 +7,41 @@
         <ToolBar DockPanel.Dock="Top">
             <Button Content="Open STL..." Click="OpenStl_Click" />
         </ToolBar>
-        <!--Allow drag and drop and define event handler-->
+
+        <!-- Slider panel on the right -->
+        <Border DockPanel.Dock="Right" Width="80" Background="#F0F0F0" Padding="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Slice Height" 
+                   HorizontalAlignment="Center" 
+                   FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <Slider Grid.Row="1" 
+                x:Name="SliceHeightSlider"
+                Orientation="Vertical"
+                Minimum="0" 
+                Maximum="100"
+                Value="50"
+                TickFrequency="10"
+                IsSnapToTickEnabled="False"
+                TickPlacement="BottomRight"
+                ValueChanged="SliceHeightSlider_ValueChanged"
+                IsEnabled="False"/>
+
+                <TextBlock Grid.Row="2" 
+                   x:Name="SliceHeightText"
+                   Text="--" 
+                   HorizontalAlignment="Center"
+                   Margin="0,10,0,0"/>
+            </Grid>
+        </Border>
+
+        <!--Helix scene view. Allow drag and drop and define event handler-->
         <Helix:HelixViewport3D ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
             <Helix:SunLight/>
 

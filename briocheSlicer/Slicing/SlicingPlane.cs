@@ -16,6 +16,7 @@ namespace briocheSlicer.Slicing
         private int planeSize;
 
         private GeometryModel3D model;
+        private TranslateTransform3D translateTransform;
 
         public SlicingPlane(Point3D center, int size = 100)
         {
@@ -23,19 +24,25 @@ namespace briocheSlicer.Slicing
             planeNormal = new Vector3D(0, 0, 1);
             planeSize = size;
 
-            model = Update_Model();
+            // Initialize the transform, this defines the position of the plane.
+            // So we can change the transform and position instead of creating a new slicing
+            // plane model.
+            translateTransform = new TranslateTransform3D(planeCenter.X, planeCenter.Y, planeCenter.Z);
+
+            model = Create_Model();
         }
 
-        private GeometryModel3D Update_Model()
+        /// <summary>
+        /// Creates the model of the slicing plane.
+        /// </summary>
+        /// <returns>The model of the slicing plane.</returns>
+        private GeometryModel3D Create_Model()
         {
-            // Create plane
-            var plane = new Plane3D(planeCenter, planeNormal);
-
             // Create visual representation of the plane
             var rect = new RectangleVisual3D
             {
-                Origin = plane.Position,
-                Normal = plane.Normal,
+                Origin = new Point3D(0, 0, 0),
+                Normal = planeNormal,
                 LengthDirection = new Vector3D(1, 0, 0),
                 Width = planeSize,
                 Length = planeSize,
@@ -43,11 +50,29 @@ namespace briocheSlicer.Slicing
                 Material = MaterialHelper.CreateMaterial(Brushes.OrangeRed, 0.5, 100, true)
             };
 
-            // Safe for later
-            model = rect.Model;
-            return rect.Model;
+            // Apply the translation transform to position the plane at the center point
+            var geometryModel = rect.Model;
+            geometryModel.Transform = translateTransform;
+
+            return geometryModel;
         }
 
+        /// <summary>
+        /// Updates the translationTransformation of the slicingplane model.
+        /// In practice, changing the position of the slicing plane.
+        /// </summary>
+        /// <param name="newCenter">The new center around which the slicingplane will be drawn.</param>
+        private void Update_Model_Position(Point3D newCenter)
+        {
+            translateTransform.OffsetX = newCenter.X;
+            translateTransform.OffsetY = newCenter.Y;
+            translateTransform.OffsetZ = newCenter.Z;
+        }
+
+        /// <summary>
+        /// Gets a reference to the slicing plane model.
+        /// </summary>
+        /// <returns>A reference to the slicing plane model.</returns>
         public GeometryModel3D Get_Model()
         {
             return model;
@@ -60,8 +85,12 @@ namespace briocheSlicer.Slicing
         public void Set_Center(Point3D newCenter)
         {
             planeCenter = newCenter;
-            Update_Model();
+            Update_Model_Position(newCenter);
+        }
 
+        public Point3D GetCenter()
+        {
+            return planeCenter;
         }
     }
 }

@@ -21,6 +21,7 @@ namespace briocheSlicer
     public partial class MainWindow : Window
     {
         private TheSlicer slicer;
+        private Rect3D modelBounds;
 
         public MainWindow()
         {
@@ -89,8 +90,14 @@ namespace briocheSlicer
         /// </returns>
         private Model3DGroup Show_Model_And_Slice_Plane(string filename)
         {
+            // Load the model and add it to the scene.
             Model3DGroup group = Add_Model_To_Scene(filename);
+
+            // Create the slicing plane and att it to the scene.
             GeometryModel3D slicingPlane = slicer.Create_Slicing_plane(group.Bounds);
+
+            // Enable the slice height slider
+            SliceHeightSlider.IsEnabled = true;
 
             group.Children.Add(slicingPlane);
             return group;
@@ -115,7 +122,43 @@ namespace briocheSlicer
             scene.Content = group;
             View.ZoomExtents();
 
+            // Save modelbounnds for slicing plane max and min y
+            modelBounds = group.Bounds;
+
             return group;
+        }
+
+        /// <summary>
+        /// Handles slider value changes to update the slicing plane position.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SliceHeightSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (slicer == null || modelBounds.IsEmpty)
+                return;
+
+            // Convert slider value (0-100) to Y position within model bounds
+            double normalizedValue = e.NewValue / 100.0; // 0.0 to 1.0
+            double zPostion = modelBounds.Z + (normalizedValue * modelBounds.SizeZ);
+
+            // Update slicing plane position
+            slicer.Update_Slicing_Plane_Y(zPostion);
+
+            // Update text display
+            UpdateSliceHeightText(e.NewValue);
+        }
+
+        /// <summary>
+        /// Updates the slice height text display.
+        /// </summary>
+        /// <param name="sliderValue"></param>
+        private void UpdateSliceHeightText(double sliderValue)
+        {
+            if (SliceHeightText != null)
+            {
+                SliceHeightText.Text = $"{sliderValue:F0}%";
+            }
         }
     }
 }
