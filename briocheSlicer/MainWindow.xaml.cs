@@ -22,6 +22,7 @@ namespace briocheSlicer
     {
         private TheSlicer slicer;
         private Rect3D modelBounds;
+        private Model3DGroup? pureModel;
 
         public MainWindow()
         {
@@ -96,8 +97,8 @@ namespace briocheSlicer
             // Create the slicing plane and att it to the scene.
             GeometryModel3D slicingPlane = slicer.Create_Slicing_plane(group.Bounds);
 
-            // Enable the slice height slider
-            SliceHeightSlider.IsEnabled = true;
+            // Enable the slice button
+            SliceButton.IsEnabled = true;
 
             group.Children.Add(slicingPlane);
             return group;
@@ -112,11 +113,11 @@ namespace briocheSlicer
         {
             // Read stl file
             var reader = new StLReader();
-            Model3DGroup model = reader.Read(filename);
+            pureModel = reader.Read(filename);
 
             // Set the xaml variable to the model we just loaded.
             var group = new Model3DGroup();
-            group.Children.Add(model);
+            group.Children.Add(pureModel);
 
             // Add model to the scene
             scene.Content = group;
@@ -159,6 +160,40 @@ namespace briocheSlicer
             {
                 SliceHeightText.Text = $"{sliderValue:F0}%";
             }
+        }
+
+        /// <summary>
+        /// Handles the Slice button click event.
+        /// Validates inputs and initiates the slicing process.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Slice_Click(object sender, RoutedEventArgs e)
+        {
+            // Validate layer height input
+            if (double.TryParse(LayerHeightTextBox.Text, out double layerHeight) && layerHeight <= 0)
+            {
+                MessageBox.Show("Please enter a valid layer height (must be greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Validate nozzle diameter input
+            if (double.TryParse(NozzleDiameterTextBox.Text, out double nozzleDiameter) && nozzleDiameter <= 0)
+            {
+                MessageBox.Show("Please enter a valid nozzle diameter (must be greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Slice entire object with given parameters
+            slicer.Set_Layer_Height(layerHeight);
+            slicer.Set_Nozzle_Diameter(nozzleDiameter);
+            // Use the pure model loaded earlier
+
+
+            // Enable the slice height slider
+            SliceHeightSlider.IsEnabled = true;
         }
     }
 }

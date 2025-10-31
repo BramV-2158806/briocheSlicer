@@ -102,5 +102,10 @@ namespace briocheSlicer.Slicing
         {
             return planeCenter;
         }
+
+        public double GetZ()
+        {
+            return planeCenter.Z;
+        }
     }
 }

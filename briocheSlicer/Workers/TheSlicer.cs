@@ -1,12 +1,13 @@
-﻿using HelixToolkit.Wpf;
+﻿using briocheSlicer.Slicing;
+using HelixToolkit.Wpf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-using briocheSlicer.Slicing;
 
 namespace briocheSlicer.Workers
 {
@@ -15,9 +16,21 @@ namespace briocheSlicer.Workers
         private SlicingPlane? slicingPlane;
         private int slicingPlaneOverhang;
 
+        private double? layerHeight;
+        private double? nozzleDiameter;
+
         public TheSlicer()
         {
-            slicingPlaneOverhang = 20; // mm
+            slicingPlaneOverhang = 20;
+        }
+
+        public void Set_Layer_Height(double height)
+        {
+            layerHeight = height;
+        }
+        public void Set_Nozzle_Diameter(double diameter)
+        {
+            nozzleDiameter = diameter;
         }
 
         /// <summary>
@@ -41,6 +54,7 @@ namespace briocheSlicer.Workers
             return slicingPlane.Get_Model();
         }
 
+
         /// <summary>
         /// Gets the slicing plane object.
         /// </summary>
@@ -53,5 +67,43 @@ namespace briocheSlicer.Workers
             return slicingPlane!;
         }
 
+        /// <summary>
+        /// Slices the one plane and creates a slice.
+        /// </summary>
+        /// <param name="triangles"></param>
+        /// <returns></returns>
+        private Slice Slice_Plane(List<BriocheTriangle> triangles, double planeZ)
+        {
+            List<BriocheEdge> edges = new List<BriocheEdge>();
+            foreach (var triangle in triangles)
+            {
+                BriocheEdge? intersectionLine = triangle.Calculate_intersection(planeZ);
+                if (intersectionLine != null)
+                {
+                    edges.Add(intersectionLine);
+                }
+            }
+
+            return new Slice(edges);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pureModel"> The original STL model loaded in by the system</param>
+        /// <returns></returns>
+        public BriocheModel Slice_Model(Model3DGroup pureModel)
+        {
+            // callculate the amount of layers
+
+            // call the scice current plane function for each layer
+            // make sure no layers overlap (mid layer from the slides)
+
+            // Add all the slices to form the brioche model.
+
+            List<BriocheTriangle> triangels = BriocheTriangle.Get_Triangles_From_Model(pureModel);
+            Slice slice = Slice_Plane(triangels, slicingPlane!.GetZ());
+            return new BriocheModel(new List<Slice> { slice });
+        }
     }
 }
