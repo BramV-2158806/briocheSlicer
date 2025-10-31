@@ -143,7 +143,7 @@ namespace briocheSlicer
             double zPostion = modelBounds.Z + (normalizedValue * modelBounds.SizeZ);
 
             // Update slicing plane position
-            slicer.Update_Slicing_Plane_Y(zPostion);
+            slicer.Get_Slicing_Plane().Update_Slicing_Plane_Y(zPostion);
 
             // Update text display
             UpdateSliceHeightText(e.NewValue);

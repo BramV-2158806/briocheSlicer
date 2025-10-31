@@ -40,18 +40,17 @@ namespace briocheSlicer.Workers
             slicingPlane = new SlicingPlane(modelCenter, planeSize);
             return slicingPlane.Get_Model();
         }
+
         /// <summary>
-        /// Updates the Y position of the slicing plane.
+        /// Gets the slicing plane object.
         /// </summary>
-        /// <param name="newY">The new Y coordinate for the plane's center</param>
-        public void Update_Slicing_Plane_Y(double newZ)
+        /// <pre>
+        /// The slicing plane should be created first using Create_Slicing_plane.
+        /// </pre>
+        /// <returns></returns>
+        public SlicingPlane Get_Slicing_Plane()
         {
-            if (slicingPlane != null)
-            {
-                var currentCenter = slicingPlane.GetCenter();
-                var newCenter = new Point3D(currentCenter.X, currentCenter.Y, newZ);
-                slicingPlane.Set_Center(newCenter);
-            }
+            return slicingPlane!;
         }
 
     }
