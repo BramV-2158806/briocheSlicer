@@ -10,7 +10,7 @@
 
             <!-- A simple 3D object: e.g., a cube -->
             <Helix:BoxVisual3D Center="0 0 0" Width="1" Height="1" Length="1"
-                               Fill="Orange"/>
+                               Fill="Purple"/>
         </Helix:HelixViewport3D>
     </Grid>
 </Window>

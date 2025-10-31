@@ -9,6 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\TestModels\cube.stl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\TestModels\cube.stl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="HelixToolkit.Wpf" Version="2.27.3" />
   </ItemGroup>
 
