@@ -22,4 +22,8 @@
     <PackageReference Include="HelixToolkit.Wpf" Version="2.27.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Docs\" />
+  </ItemGroup>
+
 </Project>
