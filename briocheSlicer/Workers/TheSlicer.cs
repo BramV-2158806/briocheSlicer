@@ -13,9 +13,11 @@ namespace briocheSlicer.Workers
     internal class TheSlicer
     {
         private SlicingPlane? slicingPlane;
+        private int slicingPlaneOverhang;
 
         public TheSlicer()
         {
+            slicingPlaneOverhang = 20; // mm
         }
 
         public GeometryModel3D Create_Slicing_plane(Rect3D modelBounds)
@@ -26,7 +28,11 @@ namespace briocheSlicer.Workers
                 modelBounds.Y + modelBounds.SizeY / 2,
                 modelBounds.Z + modelBounds.SizeZ / 2);
 
-            slicingPlane = new SlicingPlane(modelCenter);
+            // Calculate the slicing plane size based on max model dimensions plus overhang
+            double maxDimension = Math.Max(modelBounds.SizeX, modelBounds.SizeY);
+            int planeSize = (int)(maxDimension + slicingPlaneOverhang);
+
+            slicingPlane = new SlicingPlane(modelCenter, planeSize);
             return slicingPlane.Get_Model();
         }
     }
