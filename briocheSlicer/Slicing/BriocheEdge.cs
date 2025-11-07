@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
+using System.Diagnostics;
 
 namespace briocheSlicer.Slicing
 {
@@ -26,7 +27,7 @@ namespace briocheSlicer.Slicing
 
         public void Print()
         {
-            Console.WriteLine(To_String());
+            Debug.WriteLine(To_String());
         }
     }
 }

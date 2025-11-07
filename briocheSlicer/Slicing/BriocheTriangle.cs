@@ -38,27 +38,63 @@ namespace briocheSlicer.Slicing
         /// <returns>A briocheEdge representing the intersection.</returns>
         public BriocheEdge? Calculate_Intersection(double slicingPlaneZ)
         {
-            const double eps = 1e-9;
             // Get current plane z position
-            double zPlane = slicingPlaneZ + eps; // offset to handle edge case of slides.
+            double zPlane = slicingPlaneZ + 0.00000001; // offset to handle edge case of slides.
 
             // Get triangle vertices
             var vertices = GetVertices();
-            var points = new List<Point3D>(3);
 
-            TryAddIntersection(vertices[0], vertices[1], zPlane, eps, points);
-            TryAddIntersection(vertices[1], vertices[2], zPlane, eps, points);
-            TryAddIntersection(vertices[2], vertices[0], zPlane, eps, points);
+            // Determine which vertices are above and below the slicing plane
+            List<BriocheEdge> aboveAndBelow = new List<BriocheEdge>();
 
-            var unique_points = removeDup(points, eps);
-
-            if (unique_points.Count == 2)
+            // We check each combination of vertices, but only once. (v1,V2) = (v2,v1)
+            for (int i = 0; i < vertices.Count; i++)
             {
-                var new_point1 = new Point3D(unique_points[0].X, unique_points[0].Y, zPlane);
-                var new_point2 = new Point3D(unique_points[1].Y, unique_points[1].Y, zPlane);
-                return new BriocheEdge(new_point1, new_point2);
+                for (int j = i + 1; j < vertices.Count; j++)
+                {
+                    bool v1Above = vertices[i].Z > zPlane;
+                    bool v2Above = vertices[j].Z > zPlane;
+                    if (v1Above != v2Above) // if both false or true, skip
+                    {
+                        aboveAndBelow.Add(new BriocheEdge(vertices[i], vertices[j]));
+                    }
+                }
             }
 
+            Point3D intersection1 = default, intersection2 = default;
+            // We need exactly two pairs
+            if (aboveAndBelow.Count == 2)
+            {
+                for (int i = 0; i < aboveAndBelow.Count; i++)
+                {
+                    // Extract edge
+                    var edge = aboveAndBelow[i];
+
+                    // Extract the vertices for easy copying of calculations.
+                    var zi = zPlane;
+                    var z1 = edge.Start.Z;
+                    var z2 = edge.End.Z;
+                    var x1 = edge.Start.X;
+                    var x2 = edge.End.X;
+                    var y1 = edge.Start.Y;
+                    var y2 = edge.End.Y;
+
+                    // Execute calculations.
+                    var intersectionX = x1 + ((zi - z1) * (x2 - x1)) / (z2 - z1);
+                    var intersectionY = y1 + ((zi - z1) * (y2 - y1)) / (z2 - z1);
+
+                    if (i == 0)
+                    {
+                        intersection1 = new Point3D(intersectionX, intersectionY, zi);
+                    }
+                    else
+                    {
+                        intersection2 = new Point3D(intersectionX, intersectionY, zi);
+                    }
+                }
+
+                return new BriocheEdge(intersection1, intersection2);
+            }
             return null;
         }
 

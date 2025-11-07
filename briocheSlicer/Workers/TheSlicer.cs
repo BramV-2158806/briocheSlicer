@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Diagnostics;
 
 namespace briocheSlicer.Workers
 {
@@ -118,12 +119,14 @@ namespace briocheSlicer.Workers
         public static List<BriocheEdge> Intersections_Of_Plane(List<BriocheTriangle> triangles, double planeZ)
         {
             var edges = new List<BriocheEdge>();
+            Debug.WriteLine($"--------------Calculating intersections at Z={planeZ}...");
             foreach (var tri in triangles)
             {
                 var triEdges = tri.Calculate_Intersection(planeZ);
                 if (triEdges == null) continue;
 
                 edges.AddRange(triEdges);
+                triEdges.Print();
             }
             return edges;
         }
@@ -143,7 +146,7 @@ namespace briocheSlicer.Workers
             edges = EdgeUtils.Merge_Collinear(edges, EDGE_EPS);
 
             // For debug purposes, print the edges.
-            Console.WriteLine($"Slice at Z={planeZ} has {edges.Count} unique edges after merging collinear.");
+            Debug.WriteLine($"Slice at Z={planeZ} has {edges.Count} unique edges after merging collinear.");
             foreach (BriocheEdge edge in edges)
             {
                 edge.Print();
