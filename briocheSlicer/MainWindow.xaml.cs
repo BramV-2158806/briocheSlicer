@@ -170,8 +170,6 @@ namespace briocheSlicer
 
             // Update text display
             UpdateSliceHeightText(e.NewValue);
-
-            RedrawCurrentSlice();
         }
 
         /// <summary>
