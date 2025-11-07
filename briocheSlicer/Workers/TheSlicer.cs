@@ -11,8 +11,9 @@ using System.Windows.Media.Media3D;
 
 namespace briocheSlicer.Workers
 {
-    internal class TheSlicer
+    internal partial class TheSlicer
     {
+        private const double EDGE_EPS = 1e-6;
         private SlicingPlane? slicingPlane;
         private int slicingPlaneOverhang;
 
@@ -67,24 +68,114 @@ namespace briocheSlicer.Workers
             return slicingPlane!;
         }
 
+        private readonly struct VertexKey : IEquatable<VertexKey>
+        {
+            public readonly long Xq, Yq;
+            public VertexKey(long xq, long yq) { Xq = xq; Yq = yq; }
+            public bool Equals(VertexKey other)
+            {
+                if (Xq == other.Xq && Yq == other.Yq) return true;
+                return false;
+            }
+            public override bool Equals(object? obj)
+            {
+                if (obj is VertexKey k && Equals(k)) return true;
+                return false;
+            }
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Xq, Yq);
+            }
+        }
+
+        private sealed class Snap2D
+        {
+            private readonly double _scale;
+            public Snap2D(double eps)
+            {
+                _scale = 1.0 / eps;
+            }
+            public VertexKey Key(Point3D point)
+            {
+                return new VertexKey((long)Math.Round(point.X * _scale), (long)Math.Round(point.Y * _scale));
+            }
+        }
+
+        private readonly struct UEdge : IEquatable<UEdge>
+        {
+            public readonly VertexKey k1, k2;
+            public UEdge(VertexKey key1, VertexKey key2)
+            {
+                if (key1.Xq < key2.Xq || (key1.Xq == key2.Xq && key1.Yq <= key2.Yq))
+                {
+                    k1 = key1;
+                    k2 = key2;
+                }
+                else
+                {
+                    k1 = key2;
+                    k2 = key1;
+                }
+            }
+
+            public bool Equals(UEdge other)
+            {
+                return k1.Equals(other.k1) && k2.Equals(other.k2);
+            }
+            public override bool Equals(object? obj)
+            {
+                return obj is UEdge e && Equals(e);
+            }
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
+            }
+        }
+        private static bool Close_By(double x1, double y1, double x2, double y2, double eps)
+        {
+            double dx = x1 - x2;
+            double dy = y1 - y2;
+            return dx * dx + dy * dy <= eps * eps;
+        }
+
+        private static List<BriocheEdge> BuildUniqueEdges(List<BriocheTriangle> triangles, double planeZ, double eps = EDGE_EPS)
+        {
+            var snap = new Snap2D(eps);
+            var uniq = new HashSet<UEdge>();
+            var outedges = new List<BriocheEdge>();
+
+            foreach (var t in triangles)
+            {
+                var edge = t.Calculate_intersection(planeZ);
+                if (edge == null) continue;
+
+                var p1 = new Point3D(edge.Start.X, edge.Start.Y, planeZ);
+                var p2 = new Point3D(edge.End.X, edge.End.Y, planeZ);
+
+                if (Close_By(p1.X, p1.Y, p2.X, p2.Y, eps)) continue;
+
+                var key1 = snap.Key(p1);
+                var key2 = snap.Key(p2);
+                var uedge = new UEdge(key1, key2);
+
+                if (uniq.Add(uedge))
+                {
+                    outedges.Add(new BriocheEdge(p1, p2));
+                }
+            }
+            return outedges;
+        }
+
         /// <summary>
         /// Slices the one plane and creates a slice.
         /// </summary>
         /// <param name="triangles"></param>
         /// <returns></returns>
-        private Slice Slice_Plane(List<BriocheTriangle> triangles, double planeZ)
+        public Slice Slice_Plane(List<BriocheTriangle> triangles, double planeZ)
         {
-            List<BriocheEdge> edges = new List<BriocheEdge>();
-            foreach (var triangle in triangles)
-            {
-                BriocheEdge? intersectionLine = triangle.Calculate_intersection(planeZ);
-                if (intersectionLine != null)
-                {
-                    edges.Add(intersectionLine);
-                }
-            }
-
-            return new Slice(edges);
+            List<BriocheEdge> edges = BuildUniqueEdges(triangles, planeZ);
+            edges = EdgeUtils.MergeCollinear(edges, EDGE_EPS);
+            return new Slice(edges, planeZ);
         }
 
         /// <summary>
@@ -96,7 +187,7 @@ namespace briocheSlicer.Workers
         {
             // callculate the amount of layers
 
-            // call the scice current plane function for each layer
+            // call the slice current plane function for each layer
             // make sure no layers overlap (mid layer from the slides)
 
             // Add all the slices to form the brioche model.

@@ -69,13 +69,26 @@
             </Grid>
         </Border>
 
-        <!--Helix scene view. Allow drag and drop and define event handler-->
-        <Helix:HelixViewport3D ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
-            <Helix:SunLight/>
+        <!-- Center area: split into 2 columns: 3D (left) + 2D Slice View (right) -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <!--This is the parameter we need to change in c#-->
-            <ModelVisual3D x:Name="scene" />
+            <!--Helix scene view. Allow drag and drop and define event handler-->
+            <Helix:HelixViewport3D Grid.Column="0" ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
+                <Helix:SunLight/>
+                <ModelVisual3D x:Name="scene" />
+            </Helix:HelixViewport3D>
 
-        </Helix:HelixViewport3D>
+            <!-- 2D slice view -->
+            <Border Grid.Column="1" Background="#0D0D0D" Margin="8" CornerRadius="8">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <Canvas x:Name="SliceCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="200" MinWidth="200" Background="#111"/>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
     </DockPanel>
 </Window>

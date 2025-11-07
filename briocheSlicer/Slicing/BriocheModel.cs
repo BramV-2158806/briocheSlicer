@@ -16,5 +16,10 @@ namespace briocheSlicer.Slicing
             amount_Layers = layers.Count;
         }
 
+        public Slice GetSlice(int index)
+        {
+            return layers[index];
+        }
+
     }
 }

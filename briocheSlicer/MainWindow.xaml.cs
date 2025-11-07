@@ -1,5 +1,6 @@
-﻿using HelixToolkit.Wpf;
-using Microsoft.Win32;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,10 +12,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Diagnostics;
+using briocheSlicer.Rendering;
+using briocheSlicer.Slicing;
 using briocheSlicer.Workers;
+using HelixToolkit.Wpf;
+using Microsoft.Win32;
 
 namespace briocheSlicer
 {
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -28,6 +35,9 @@ namespace briocheSlicer
         {
             InitializeComponent();
             slicer = new TheSlicer();
+
+            if (SliceCanvas != null)
+                SliceCanvas.SizeChanged += (_, __) => RedrawCurrentSlice();
         }
 
         /// <summary>
@@ -52,6 +62,11 @@ namespace briocheSlicer
                 try
                 {
                     Model3DGroup group = Show_Model_And_Slice_Plane(dlg.FileName);
+
+                    SliceHeightSlider.IsEnabled = true;
+                    UpdateSliceHeightText(SliceHeightSlider.Value);
+
+                    RedrawCurrentSlice();
                 }
                 catch (Exception ex)
                 {
@@ -77,6 +92,11 @@ namespace briocheSlicer
                 if (files.Length > 0 && files[0].EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
                 {
                     Model3DGroup group = Show_Model_And_Slice_Plane(files[0]);
+
+                    SliceHeightSlider.IsEnabled = true;
+                    UpdateSliceHeightText(SliceHeightSlider.Value);
+
+                    RedrawCurrentSlice();
                 }
             }
         }
@@ -126,6 +146,8 @@ namespace briocheSlicer
             // Save modelbounnds for slicing plane max and min y
             modelBounds = group.Bounds;
 
+            UpdateSliceHeightText(SliceHeightSlider.Value);
+
             return group;
         }
 
@@ -144,10 +166,12 @@ namespace briocheSlicer
             double zPostion = modelBounds.Z + (normalizedValue * modelBounds.SizeZ);
 
             // Update slicing plane position
-            slicer.Get_Slicing_Plane().Update_Slicing_Plane_Y(zPostion);
+            slicer.Get_Slicing_Plane().Update_Slicing_Plane_Z(zPostion);
 
             // Update text display
             UpdateSliceHeightText(e.NewValue);
+
+            RedrawCurrentSlice();
         }
 
         /// <summary>
@@ -194,6 +218,75 @@ namespace briocheSlicer
 
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
+
+            RedrawCurrentSlice();
+        }
+
+        /// <summary>
+        /// Re-renders the 2D slice on SliceCanvas for the current slider Z.
+        /// </summary>
+        private void RedrawCurrentSlice()
+        {
+            if (scene?.Content == null || pureModel == null || SliceCanvas == null) return;
+            if (modelBounds.IsEmpty) return;
+
+            double z = modelBounds.Z + (SliceHeightSlider.Value / 100.0) * modelBounds.SizeZ;
+
+            // 1) Build intersections (triangles -> segments). Make sure your Calculate_intersection clamps Z to 'z'.
+            var triangles = BriocheTriangle.Get_Triangles_From_Model(pureModel);
+            var rawEdges = triangles
+                .Select(t => t.Calculate_intersection(z))
+                .Where(e => e != null)
+                .Select(e => e!)     // non-null now
+                .ToList();
+
+            Debug.WriteLine($"[Slice] Z={z:F3} triangles={triangles.Count} rawSegments={rawEdges.Count}");
+
+            // OPTIONAL but recommended: dedup + merge-collinear (as discussed earlier)
+            // rawEdges = BuildUniqueEdgesAtZ(...);          // undirected dedup
+            // rawEdges = EdgeUtils.MergeCollinear(rawEdges);// merge halves on a cube face
+
+            // 2) Try to build polygons
+            var slice = new Slice(rawEdges, z);
+            var polys = slice.getPolygons();
+
+            Debug.WriteLine($"[Slice] polygons={polys.Count} (loops).");
+
+            if (polys.Count > 0)
+            {
+                // Show polygons
+                SliceRenderer.DrawSliceAutoFit(SliceCanvas, polys);
+            }
+            else
+            {
+                // No loops formed? Show raw segments + endpoints so you see what’s happening
+                SliceRenderer.DrawSegmentsAutoFit(SliceCanvas, rawEdges, 1.5, 0.06, drawEndpoints: true);
+
+                // Optional on-canvas note
+                var tb = new TextBlock
+                {
+                    Text = "No closed loops found – showing raw segments",
+                    Foreground = Brushes.Gray,
+                    Margin = new Thickness(8),
+                    FontSize = 12
+                };
+                SliceCanvas.Children.Add(tb);
+            }
+        }
+
+        /// <summary>
+        /// Temporary demo edges (20x20 square) so you can see the 2D panel working immediately.
+        /// Replace with your real triangle-plane intersections.
+        /// </summary>
+        private static List<BriocheEdge> BuildDemoEdges(double z)
+        {
+            return new List<BriocheEdge>
+            {
+                new(new Point3D(0,0,z),   new Point3D(20,0,z)),
+                new(new Point3D(20,0,z),  new Point3D(20,20,z)),
+                new(new Point3D(20,20,z), new Point3D(0,20,z)),
+                new(new Point3D(0,20,z),  new Point3D(0,0,z)),
+            };
         }
     }
 }

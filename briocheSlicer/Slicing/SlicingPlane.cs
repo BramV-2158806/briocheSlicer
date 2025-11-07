@@ -81,8 +81,8 @@ namespace briocheSlicer.Slicing
         /// <summary>
         /// Updates the Y position of the slicing plane.
         /// </summary>
-        /// <param name="newY">The new Y coordinate for the plane's center</param>
-        public void Update_Slicing_Plane_Y(double newZ)
+        /// <param name="newY">The new Z coordinate for the plane's center</param>
+        public void Update_Slicing_Plane_Z(double newZ)
         {
             var newCenter = new Point3D(planeCenter.X, planeCenter.Y, newZ);
             Set_Center(newCenter);
