@@ -36,7 +36,7 @@ namespace briocheSlicer.Slicing
         /// </summary>
         /// <param name="triangle"> The triangle for which it has to be calculated</param>
         /// <returns>A briocheEdge representing the intersection.</returns>
-        public BriocheEdge? Calculate_intersection(double slicingPlaneZ)
+        public BriocheEdge? Calculate_Intersection(double slicingPlaneZ)
         {
             const double eps = 1e-9;
             // Get current plane z position

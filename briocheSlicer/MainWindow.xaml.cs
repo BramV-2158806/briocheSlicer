@@ -235,7 +235,7 @@ namespace briocheSlicer
             // 1) Build intersections (triangles -> segments). Make sure your Calculate_intersection clamps Z to 'z'.
             var triangles = BriocheTriangle.Get_Triangles_From_Model(pureModel);
             var rawEdges = triangles
-                .Select(t => t.Calculate_intersection(z))
+                .Select(t => t.Calculate_Intersection(z))
                 .Where(e => e != null)
                 .Select(e => e!)     // non-null now
                 .ToList();

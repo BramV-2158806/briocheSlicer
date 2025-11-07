@@ -7,7 +7,7 @@ namespace briocheSlicer.Slicing
 {
     internal static class EdgeUtils
     {
-        public static List<BriocheEdge> MergeCollinear(List<BriocheEdge> edges, double eps = 1e-6)
+        public static List<BriocheEdge> Merge_Collinear(List<BriocheEdge> edges, double eps = 1e-6)
         {
             if (edges == null || edges.Count < 2) return edges ?? new();
 

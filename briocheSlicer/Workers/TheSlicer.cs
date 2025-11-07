@@ -68,69 +68,7 @@ namespace briocheSlicer.Workers
             return slicingPlane!;
         }
 
-        private readonly struct VertexKey : IEquatable<VertexKey>
-        {
-            public readonly long Xq, Yq;
-            public VertexKey(long xq, long yq) { Xq = xq; Yq = yq; }
-            public bool Equals(VertexKey other)
-            {
-                if (Xq == other.Xq && Yq == other.Yq) return true;
-                return false;
-            }
-            public override bool Equals(object? obj)
-            {
-                if (obj is VertexKey k && Equals(k)) return true;
-                return false;
-            }
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(Xq, Yq);
-            }
-        }
-
-        private sealed class Snap2D
-        {
-            private readonly double _scale;
-            public Snap2D(double eps)
-            {
-                _scale = 1.0 / eps;
-            }
-            public VertexKey Key(Point3D point)
-            {
-                return new VertexKey((long)Math.Round(point.X * _scale), (long)Math.Round(point.Y * _scale));
-            }
-        }
-
-        private readonly struct UEdge : IEquatable<UEdge>
-        {
-            public readonly VertexKey k1, k2;
-            public UEdge(VertexKey key1, VertexKey key2)
-            {
-                if (key1.Xq < key2.Xq || (key1.Xq == key2.Xq && key1.Yq <= key2.Yq))
-                {
-                    k1 = key1;
-                    k2 = key2;
-                }
-                else
-                {
-                    k1 = key2;
-                    k2 = key1;
-                }
-            }
-
-            public bool Equals(UEdge other)
-            {
-                return k1.Equals(other.k1) && k2.Equals(other.k2);
-            }
-            public override bool Equals(object? obj)
-            {
-                return obj is UEdge e && Equals(e);
-            }
-            public override int GetHashCode()
-            {
-                return base.GetHashCode();
-            }
-        }
+       
         private static bool Close_By(double x1, double y1, double x2, double y2, double eps)
         {
             double dx = x1 - x2;
@@ -138,32 +76,54 @@ namespace briocheSlicer.Workers
             return dx * dx + dy * dy <= eps * eps;
         }
 
-        private static List<BriocheEdge> BuildUniqueEdges(List<BriocheTriangle> triangles, double planeZ, double eps = EDGE_EPS)
+        /// <summary>
+        /// Takes a set of edges and creates a set of unique edges by removing duplicates
+        /// and empty edges.
+        /// </summary>
+        /// <param name="triangles"></param>
+        /// <param name="planeZ"></param>
+        /// <param name="eps"></param>
+        /// <returns></returns>
+        private static List<BriocheEdge> Build_Unique_Edges(List<BriocheEdge> inEdges, double planeZ, double eps = EDGE_EPS)
         {
             var snap = new Snap2D(eps);
-            var uniq = new HashSet<UEdge>();
+            var uniq = new HashSet<UnorderdEdge>();
             var outedges = new List<BriocheEdge>();
 
-            foreach (var t in triangles)
+            foreach (var edge in inEdges)
             {
-                var edge = t.Calculate_intersection(planeZ);
-                if (edge == null) continue;
+                // If the start end end point are close, this edge is useless.
+                if (Close_By(edge.Start.X, edge.Start.Y, edge.End.X, edge.End.Y, eps)) continue;
 
-                var p1 = new Point3D(edge.Start.X, edge.Start.Y, planeZ);
-                var p2 = new Point3D(edge.End.X, edge.End.Y, planeZ);
+                // Create the normalised representattio of the edge
+                var key1 = snap.Key(edge.Start);
+                var key2 = snap.Key(edge.End);
+                var uedge = new UnorderdEdge(key1, key2);
 
-                if (Close_By(p1.X, p1.Y, p2.X, p2.Y, eps)) continue;
-
-                var key1 = snap.Key(p1);
-                var key2 = snap.Key(p2);
-                var uedge = new UEdge(key1, key2);
-
-                if (uniq.Add(uedge))
+                // Add if we have not seen this edge before.
+                if (uniq.Add(uedge)) // returns true if was added, and only adds if not already present.
                 {
-                    outedges.Add(new BriocheEdge(p1, p2));
+                    outedges.Add(new BriocheEdge(edge.Start, edge.End));
                 }
             }
             return outedges;
+        }
+
+        /// <summary>
+        /// Collects the intersection edges from a set of traingles at a given plane Z.
+        /// </summary>
+        /// <param name="triangles"></param>
+        /// <param name="planeZ"></param>
+        /// <returns></returns>
+        public static List<BriocheEdge> Intersections_Of_Plane(List<BriocheTriangle> triangles, double planeZ)
+        {
+            var edges = new List<BriocheEdge>();
+            foreach (var tri in triangles)
+            {
+                var triEdges = tri.Calculate_Intersection(planeZ);
+                edges.AddRange(triEdges);
+            }
+            return edges;
         }
 
         /// <summary>
@@ -173,16 +133,22 @@ namespace briocheSlicer.Workers
         /// <returns></returns>
         public Slice Slice_Plane(List<BriocheTriangle> triangles, double planeZ)
         {
-            List<BriocheEdge> edges = BuildUniqueEdges(triangles, planeZ);
-            edges = EdgeUtils.MergeCollinear(edges, EDGE_EPS);
+            // Collect the edges from triangle intersections
+            List<BriocheEdge> intersection_edges = Intersections_Of_Plane(triangles, planeZ);
+            List<BriocheEdge> edges = Build_Unique_Edges(intersection_edges, planeZ);
+
+            // Remove unnecessary edges.
+            edges = EdgeUtils.Merge_Collinear(edges, EDGE_EPS);
+
+            // Create the slice and return.
             return new Slice(edges, planeZ);
         }
 
         /// <summary>
-        /// 
+        /// Slices the entire model.
         /// </summary>
         /// <param name="pureModel"> The original STL model loaded in by the system</param>
-        /// <returns></returns>
+        /// <returns>Gives back the sliced BriocheModel</returns>
         public BriocheModel Slice_Model(Model3DGroup pureModel)
         {
             // callculate the amount of layers
