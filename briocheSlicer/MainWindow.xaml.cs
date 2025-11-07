@@ -234,20 +234,7 @@ namespace briocheSlicer
 
             // 1) Build intersections (triangles -> segments). Make sure your Calculate_intersection clamps Z to 'z'.
             var triangles = BriocheTriangle.Get_Triangles_From_Model(pureModel);
-            var rawEdges = triangles
-                .Select(t => t.Calculate_Intersection(z))
-                .Where(e => e != null)
-                .Select(e => e!)     // non-null now
-                .ToList();
-
-            Debug.WriteLine($"[Slice] Z={z:F3} triangles={triangles.Count} rawSegments={rawEdges.Count}");
-
-            // OPTIONAL but recommended: dedup + merge-collinear (as discussed earlier)
-            // rawEdges = BuildUniqueEdgesAtZ(...);          // undirected dedup
-            // rawEdges = EdgeUtils.MergeCollinear(rawEdges);// merge halves on a cube face
-
-            // 2) Try to build polygons
-            var slice = new Slice(rawEdges, z);
+            var slice = slicer.Slice_Plane(triangles, z);
             var polys = slice.getPolygons();
 
             Debug.WriteLine($"[Slice] polygons={polys.Count} (loops).");
@@ -259,13 +246,11 @@ namespace briocheSlicer
             }
             else
             {
-                // No loops formed? Show raw segments + endpoints so you see what’s happening
-                SliceRenderer.DrawSegmentsAutoFit(SliceCanvas, rawEdges, 1.5, 0.06, drawEndpoints: true);
-
-                // Optional on-canvas note
+                // Fallback: if no loops, show message
+                SliceCanvas.Children.Clear();
                 var tb = new TextBlock
                 {
-                    Text = "No closed loops found – showing raw segments",
+                    Text = "No closed loops found at this height",
                     Foreground = Brushes.Gray,
                     Margin = new Thickness(8),
                     FontSize = 12

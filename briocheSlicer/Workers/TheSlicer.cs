@@ -121,6 +121,8 @@ namespace briocheSlicer.Workers
             foreach (var tri in triangles)
             {
                 var triEdges = tri.Calculate_Intersection(planeZ);
+                if (triEdges == null) continue;
+
                 edges.AddRange(triEdges);
             }
             return edges;
@@ -139,6 +141,13 @@ namespace briocheSlicer.Workers
 
             // Remove unnecessary edges.
             edges = EdgeUtils.Merge_Collinear(edges, EDGE_EPS);
+
+            // For debug purposes, print the edges.
+            Console.WriteLine($"Slice at Z={planeZ} has {edges.Count} unique edges after merging collinear.");
+            foreach (BriocheEdge edge in edges)
+            {
+                edge.Print();
+            }
 
             // Create the slice and return.
             return new Slice(edges, planeZ);

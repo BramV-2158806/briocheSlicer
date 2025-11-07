@@ -18,5 +18,15 @@ namespace briocheSlicer.Slicing
         }
 
         public Tuple<Point3D, Point3D> GetPoints() => Tuple.Create(Start, End);
+
+        public String To_String()
+        {
+            return $"Edge(Start: ({Start.X}, {Start.Y}, {Start.Z}), End: ({End.X}, {End.Y}, {End.Z}))";
+        }
+
+        public void Print()
+        {
+            Console.WriteLine(To_String());
+        }
     }
 }
