@@ -55,10 +55,11 @@ namespace briocheSlicer.Workers
             // Add some debug messaging in the gcode
             gcode.AppendLine($"; Layer {layerIndex}");
 
-            // Move to layer height
-            gcode.AppendLine($"G1 F{settings.TravelSpeed * 60:F0} Z{settings.LayerHeight * layerIndex}");
+            // Move to layer height - keep in mind the mid layer slicing
+            gcode.AppendLine($"G1 F{settings.TravelSpeed * 60:F0} Z{settings.LayerHeight * (layerIndex + 0.5)}");
 
             // Process each polygon in the slice
+            // TODO create toolpaths and print using PATHSD from clipper instead of BriocheEdges
             var polygons = slice.getPolygons();
             foreach (var polygon in polygons)
             {
