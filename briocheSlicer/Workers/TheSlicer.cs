@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Diagnostics;
+using briocheSlicer.Gcode;
 
 namespace briocheSlicer.Workers
 {
@@ -141,7 +142,7 @@ namespace briocheSlicer.Workers
         /// </summary>
         /// <param name="triangles"></param>
         /// <returns></returns>
-        public BriocheSlice Slice_Plane(List<BriocheTriangle> triangles, double planeZ)
+        public BriocheSlice Slice_Plane(List<BriocheTriangle> triangles, double planeZ, GcodeSettings settings)
         {
             // Collect the edges from triangle intersections
             List<BriocheEdge> intersection_edges = Intersections_Of_Plane(triangles, planeZ);
@@ -158,7 +159,7 @@ namespace briocheSlicer.Workers
             }
 
             // Create the slice and return.
-            return new BriocheSlice(edges, planeZ);
+            return new BriocheSlice(edges, planeZ, settings);
         }
 
         /// <summary>
@@ -166,7 +167,7 @@ namespace briocheSlicer.Workers
         /// </summary>
         /// <param name="pureModel"> The original STL model loaded in by the system</param>
         /// <returns>Gives back the sliced BriocheModel</returns>
-        public BriocheModel Slice_Model(Model3DGroup pureModel)
+        public BriocheModel Slice_Model(Model3DGroup pureModel, GcodeSettings settings)
         {
             if (!layerHeight.HasValue)
             {
@@ -192,7 +193,7 @@ namespace briocheSlicer.Workers
                 double currentZ = modelMinZ + (layerIdx + 0.5) * layerHeight.Value;
                 
 
-                BriocheSlice slice = Slice_Plane(triangels, currentZ);
+                BriocheSlice slice = Slice_Plane(triangels, currentZ, settings);
                 slices.Add(slice);
             }
 

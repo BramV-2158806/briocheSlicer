@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
 using System.Runtime.CompilerServices;
 using Clipper2Lib;
+using briocheSlicer.Gcode;
 
 namespace briocheSlicer.Slicing
 {
@@ -16,11 +17,11 @@ namespace briocheSlicer.Slicing
         private readonly double slice_height;
         private PathsD? slice;
 
-        public BriocheSlice(List<BriocheEdge> edges, double z)
+        public BriocheSlice(List<BriocheEdge> edges, double z, GcodeSettings settings)
         {
             this.slice_height = z;
             this.polygons = Connect_Edges(edges);
-            this.slice = Convert_To_Clipper_Slice();
+            this.slice = Convert_To_Clipper_Slice(settings);
         }
 
         public List<List<BriocheEdge>> getPolygons()
@@ -55,11 +56,20 @@ namespace briocheSlicer.Slicing
             return loops;
         }
 
-        private PathsD Convert_To_Clipper_Slice()
+        private PathsD Convert_To_Clipper_Slice(GcodeSettings settings)
         {
+            // Convert the basic BriochePolygins to a clipper representation
             PathsD rawSlice = Convert_Polygon_To_Clipper(polygons);
 
-            return Clipper.Union(rawSlice, FillRule.EvenOdd);
+            // Apply the fill in rule
+            PathsD cleanedSlice = Clipper.Union(rawSlice, FillRule.EvenOdd);
+
+            // Erode the permites
+            // Negative delta (erosion) half of the size of the nozzle diameter
+            double delta = -(settings.NozzleDiameter / 2.0);
+            cleanedSlice = Clipper.InflatePaths(cleanedSlice, delta, JoinType.Round, EndType.Round);
+
+            return cleanedSlice;
         }
 
         private static PathsD Convert_Polygon_To_Clipper(List<List<BriocheEdge>> polies)

@@ -18,6 +18,7 @@ using briocheSlicer.Slicing;
 using briocheSlicer.Workers;
 using HelixToolkit.Wpf;
 using Microsoft.Win32;
+using briocheSlicer.Gcode;
 
 namespace briocheSlicer
 {
@@ -34,11 +35,14 @@ namespace briocheSlicer
         private Model3DGroup? pureModel;
         private BriocheModel? briocheModel;
 
+        private GcodeSettings gcodeSettings;
+
         public MainWindow()
         {
             InitializeComponent();
             slicer = new TheSlicer();
             codeGenerator = new TheCodeGenerator();
+            gcodeSettings = new GcodeSettings();
 
             if (SliceCanvas != null)
                 SliceCanvas.SizeChanged += (_, __) => RedrawCurrentSlice();
@@ -226,6 +230,8 @@ namespace briocheSlicer
             // Slice entire object with given parameters
             slicer.Set_Layer_Height(layerHeight);
             slicer.Set_Nozzle_Diameter(nozzleDiameter);
+            gcodeSettings.LayerHeight = layerHeight;
+            gcodeSettings.NozzleDiameter = nozzleDiameter;
             // Use the pure model loaded earlier
 
 
@@ -234,7 +240,7 @@ namespace briocheSlicer
             PrintButton.IsEnabled = true;
 
             // Slice the model
-            briocheModel = slicer.Slice_Model(pureModel);
+            briocheModel = slicer.Slice_Model(pureModel, gcodeSettings);
 
             RedrawCurrentSlice();
         }
