@@ -8,13 +8,13 @@ using System.Runtime.CompilerServices;
 
 namespace briocheSlicer.Slicing
 {
-    internal class Slice
+    internal class BriocheSlice
     {
         private List<List<BriocheEdge>> polygons; // Store multiple polygons
         private const double EPSILON = 1e-6; // Tolerance for floating point comparison
         private readonly double slice_height;
 
-        public Slice(List<BriocheEdge> edges, double z)
+        public BriocheSlice(List<BriocheEdge> edges, double z)
         {
             this.slice_height = z;
             this.polygons = Connect_Edges(edges);

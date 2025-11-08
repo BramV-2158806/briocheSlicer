@@ -8,15 +8,15 @@ namespace briocheSlicer.Slicing
 {
     internal class BriocheModel
     {
-        private List<Slice> layers;
+        private List<BriocheSlice> layers;
         public readonly int amount_Layers;
-        public BriocheModel(List<Slice> newSlices) 
+        public BriocheModel(List<BriocheSlice> newSlices) 
         { 
             layers = newSlices; 
             amount_Layers = layers.Count;
         }
 
-        public Slice GetSlice(int index)
+        public BriocheSlice GetSlice(int index)
         {
             return layers[index];
         }

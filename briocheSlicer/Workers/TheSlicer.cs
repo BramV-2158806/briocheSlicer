@@ -136,7 +136,7 @@ namespace briocheSlicer.Workers
         /// </summary>
         /// <param name="triangles"></param>
         /// <returns></returns>
-        public Slice Slice_Plane(List<BriocheTriangle> triangles, double planeZ)
+        public BriocheSlice Slice_Plane(List<BriocheTriangle> triangles, double planeZ)
         {
             // Collect the edges from triangle intersections
             List<BriocheEdge> intersection_edges = Intersections_Of_Plane(triangles, planeZ);
@@ -153,7 +153,7 @@ namespace briocheSlicer.Workers
             }
 
             // Create the slice and return.
-            return new Slice(edges, planeZ);
+            return new BriocheSlice(edges, planeZ);
         }
 
         /// <summary>
@@ -171,8 +171,8 @@ namespace briocheSlicer.Workers
             // Add all the slices to form the brioche model.
 
             List<BriocheTriangle> triangels = BriocheTriangle.Get_Triangles_From_Model(pureModel);
-            Slice slice = Slice_Plane(triangels, slicingPlane!.GetZ());
-            return new BriocheModel(new List<Slice> { slice });
+            BriocheSlice slice = Slice_Plane(triangels, slicingPlane!.GetZ());
+            return new BriocheModel(new List<BriocheSlice> { slice });
         }
     }
 }

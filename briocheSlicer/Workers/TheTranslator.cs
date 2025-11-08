@@ -8,5 +8,6 @@ namespace briocheSlicer.Workers
 {
     internal class TheTranslator
     {
+
     }
 }

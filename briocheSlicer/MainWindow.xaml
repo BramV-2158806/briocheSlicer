@@ -33,6 +33,15 @@
                 IsEnabled="False"
                 Padding="10,3"
                 ToolTip="Slice the model with current settings"/>
+            <Separator/>
+
+            <!-- Print Button -->
+            <Button Content="Print" 
+                Click="Print_Click" 
+                x:Name="PrintButton"
+                IsEnabled="False"
+                Padding="10,3"
+                ToolTip="Send G-code to printer"/>
 
         </ToolBar>
 

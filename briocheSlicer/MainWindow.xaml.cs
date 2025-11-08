@@ -28,13 +28,17 @@ namespace briocheSlicer
     public partial class MainWindow : Window
     {
         private TheSlicer slicer;
+        private TheCodeGenerator codeGenerator;
+
         private Rect3D modelBounds;
         private Model3DGroup? pureModel;
+        private BriocheModel? briocheModel;
 
         public MainWindow()
         {
             InitializeComponent();
             slicer = new TheSlicer();
+            codeGenerator = new TheCodeGenerator();
 
             if (SliceCanvas != null)
                 SliceCanvas.SizeChanged += (_, __) => RedrawCurrentSlice();
@@ -216,8 +220,35 @@ namespace briocheSlicer
 
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
+            PrintButton.IsEnabled = true;
 
             RedrawCurrentSlice();
+        }
+
+        /// <summary>
+        /// Handles the Print button click event.
+        /// Sends G-code to the printer.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Print_Click(object sender, RoutedEventArgs e)
+        {
+            if (briocheModel == null)
+            {
+                MessageBox.Show("No slice available to print. Please slice the model first.",
+                                "No Slice", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Parse the brioche model to gcode
+            // For now, the briocheModel wil only have the current slicing plane
+            // slice. Ofcourse later this should be the entire model but now we dont have to
+            // change this code when that happens.
+            codeGenerator.Generate(briocheModel, new Gcode.GcodeSettings(), "brioche_slicer_output.gcode");
+
+            // Add positive affordance
+            MessageBox.Show("G-code generated successfully!",
+                            "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         /// <summary>
@@ -231,9 +262,13 @@ namespace briocheSlicer
             double z = modelBounds.Z + (SliceHeightSlider.Value / 100.0) * modelBounds.SizeZ;
 
             // 1) Build intersections (triangles -> segments). Make sure your Calculate_intersection clamps Z to 'z'.
-            var triangles = BriocheTriangle.Get_Triangles_From_Model(pureModel);
-            var slice = slicer.Slice_Plane(triangles, z);
-            var polys = slice.getPolygons();
+            //var triangles = BriocheTriangle.Get_Triangles_From_Model(pureModel);
+            //currentSlice = slicer.Slice_Plane(triangles, z);
+
+            briocheModel = slicer.Slice_Model(pureModel);
+            var currentSlice = briocheModel.GetSlice(0); // For now, just show the first slice.
+
+            var polys = currentSlice.getPolygons();
 
             Debug.WriteLine($"[Slice] polygons={polys.Count} (loops).");
 
@@ -244,7 +279,7 @@ namespace briocheSlicer
             }
             else
             {
-                // Fallback: if no loops, show message
+                // Negative affordance: if no loops, show message
                 SliceCanvas.Children.Clear();
                 var tb = new TextBlock
                 {

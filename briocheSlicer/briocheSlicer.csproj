@@ -28,4 +28,9 @@
     <Folder Include="Docs\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\start.gcode" />
+    <EmbeddedResource Include="Resources\end.gcode" />
+  </ItemGroup>
+
 </Project>
