@@ -174,6 +174,9 @@ namespace briocheSlicer
 
             // Update text display
             UpdateSliceHeightText(e.NewValue);
+
+            // Redraw the current slice
+            RedrawCurrentSlice();
         }
 
         /// <summary>
@@ -212,6 +215,14 @@ namespace briocheSlicer
                 return;
             }
 
+            // Validate model is loaded
+            if (pureModel == null)
+            {
+                MessageBox.Show("No model loaded. Please load an STL file first.",
+                                "No Model", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Slice entire object with given parameters
             slicer.Set_Layer_Height(layerHeight);
             slicer.Set_Nozzle_Diameter(nozzleDiameter);
@@ -221,6 +232,9 @@ namespace briocheSlicer
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
             PrintButton.IsEnabled = true;
+
+            // Slice the model
+            briocheModel = slicer.Slice_Model(pureModel);
 
             RedrawCurrentSlice();
         }
@@ -257,21 +271,18 @@ namespace briocheSlicer
         private void RedrawCurrentSlice()
         {
             if (scene?.Content == null || pureModel == null || SliceCanvas == null) return;
-            if (modelBounds.IsEmpty) return;
+            if (modelBounds.IsEmpty || briocheModel == null || slicer == null) return;
 
+            // Calculate the current layer index
             double z = modelBounds.Z + (SliceHeightSlider.Value / 100.0) * modelBounds.SizeZ;
+            double? layerHeight = slicer.Get_Layer_Height()!;
+            int layerIndex = (int)Math.Floor((z - modelBounds.Z) / layerHeight.Value);
 
-            // 1) Build intersections (triangles -> segments). Make sure your Calculate_intersection clamps Z to 'z'.
-            //var triangles = BriocheTriangle.Get_Triangles_From_Model(pureModel);
-            //currentSlice = slicer.Slice_Plane(triangles, z);
-
-            briocheModel = slicer.Slice_Model(pureModel);
-            var currentSlice = briocheModel.GetSlice(0); // For now, just show the first slice.
-
+            // Get the slice of the current layer
+            var currentSlice = briocheModel.GetSlice(layerIndex); 
             var polys = currentSlice.getPolygons();
 
-            Debug.WriteLine($"[Slice] polygons={polys.Count} (loops).");
-
+            // Draw the 2D slice
             if (polys.Count > 0)
             {
                 // Show polygons

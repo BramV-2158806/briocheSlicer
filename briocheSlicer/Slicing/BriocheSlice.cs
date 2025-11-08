@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
 using System.Runtime.CompilerServices;
+using Clipper2Lib;
 
 namespace briocheSlicer.Slicing
 {
@@ -13,11 +14,13 @@ namespace briocheSlicer.Slicing
         private List<List<BriocheEdge>> polygons; // Store multiple polygons
         private const double EPSILON = 1e-6; // Tolerance for floating point comparison
         private readonly double slice_height;
+        private PathsD? slice;
 
         public BriocheSlice(List<BriocheEdge> edges, double z)
         {
             this.slice_height = z;
             this.polygons = Connect_Edges(edges);
+            this.slice = Convert_To_Clipper_Slice();
         }
 
         public List<List<BriocheEdge>> getPolygons()
@@ -50,6 +53,28 @@ namespace briocheSlicer.Slicing
             var loops = FormClosedLoops(edges, adjacencyList, snap);
 
             return loops;
+        }
+
+        private PathsD Convert_To_Clipper_Slice()
+        {
+            PathsD rawSlice = Convert_Polygon_To_Clipper(polygons);
+
+            return Clipper.Union(rawSlice, FillRule.EvenOdd);
+        }
+
+        private static PathsD Convert_Polygon_To_Clipper(List<List<BriocheEdge>> polies)
+        {
+            PathsD rawSlice = new PathsD();
+            foreach (var polygon in polies)
+            {
+                var path = new PathD();
+                foreach (var edge in polygon)
+                {
+                    path.Add(new PointD(edge.Start.X, edge.Start.Y));
+                }
+                rawSlice.Add(path);
+            }
+            return rawSlice;
         }
 
         /// <summary>

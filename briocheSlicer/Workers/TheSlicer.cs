@@ -35,6 +35,11 @@ namespace briocheSlicer.Workers
             nozzleDiameter = diameter;
         }
 
+        public double? Get_Layer_Height()
+        {
+            return layerHeight;
+        }
+
         /// <summary>
         /// Creates the slicing plane object.
         /// </summary>
@@ -163,16 +168,36 @@ namespace briocheSlicer.Workers
         /// <returns>Gives back the sliced BriocheModel</returns>
         public BriocheModel Slice_Model(Model3DGroup pureModel)
         {
+            if (!layerHeight.HasValue)
+            {
+                throw new InvalidOperationException("Layer height must be set before slicing the model.");
+            }
+
+            // Get the height bounds so we can calculate the layers.
+            Rect3D modelBounds = pureModel.Bounds;
+            double modelMinZ = modelBounds.Z;
+            double modelMaxZ = modelBounds.Z + modelBounds.SizeZ;
+
             // callculate the amount of layers
+            // We round up, because rounding down is not pratcical
+            int layerCount = (int)Math.Ceiling(modelBounds.SizeZ / layerHeight.Value);
 
             // call the slice current plane function for each layer
-            // make sure no layers overlap (mid layer from the slides)
+            List<BriocheTriangle> triangels = BriocheTriangle.Get_Triangles_From_Model(pureModel);
+            List<BriocheSlice> slices = new List<BriocheSlice>();
+            for (int layerIdx = 0; layerIdx < layerCount; layerIdx++)
+            {
+                // make sure no layers overlap (mid layer from the slides)
+                // We add 0.5 to get the middle of the layer
+                double currentZ = modelMinZ + (layerIdx + 0.5) * layerHeight.Value;
+                
+
+                BriocheSlice slice = Slice_Plane(triangels, currentZ);
+                slices.Add(slice);
+            }
 
             // Add all the slices to form the brioche model.
-
-            List<BriocheTriangle> triangels = BriocheTriangle.Get_Triangles_From_Model(pureModel);
-            BriocheSlice slice = Slice_Plane(triangels, slicingPlane!.GetZ());
-            return new BriocheModel(new List<BriocheSlice> { slice });
+            return new BriocheModel(slices);
         }
     }
 }
