@@ -333,17 +333,18 @@ namespace briocheSlicer
 
             // Get the slice of the current layer
             var currentSlice = briocheModel.GetSlice(layerIndex); 
-            var polys = currentSlice.getPolygons();
+            var slice = currentSlice.GetSlice();
+            var infill = currentSlice.GetInfill();
 
             // Draw the 2D slice
-            if (polys.Count > 0)
+            if (slice != null && slice.Count > 0)
             {
-                // Show polygons
-                SliceRenderer.DrawSliceAutoFit(SliceCanvas, polys);
+                // Show slice paths and infill
+                SliceRenderer.DrawSliceAutoFit(SliceCanvas, slice, infill);
             }
             else
             {
-                // Negative affordance: if no loops, show message
+                // Negative affordance: if no paths, show message
                 SliceCanvas.Children.Clear();
                 var tb = new TextBlock
                 {

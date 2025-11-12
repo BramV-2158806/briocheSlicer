@@ -7,45 +7,88 @@ using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
 using briocheSlicer.Slicing;
+using Clipper2Lib;
 
 namespace briocheSlicer.Rendering
 {
     internal static class SliceRenderer
     {
-        // -------- POLYGONS (auto-fit) --------
-        public static void DrawSliceAutoFit(Canvas canvas, IReadOnlyList<List<BriocheEdge>> polygons,
-                                            double strokePx = 1.5, double marginPercent = 0.06)
+        // -------- PATHSD (auto-fit) --------
+        public static void DrawSliceAutoFit(Canvas canvas, PathsD? slice, PathsD? infill = null,
+         double strokePx = 1.5, double marginPercent = 0.06)
         {
             canvas.Children.Clear();
-            if (polygons == null || polygons.Count == 0) return;
+            if ((slice == null || slice.Count == 0) && (infill == null || infill.Count == 0)) return;
 
-            var bounds = ComputeBoundsFromPolygons(polygons);
+            var bounds = ComputeBoundsFromPathsD(slice, infill);
+
             DrawUsingTransform(canvas, strokePx, marginPercent, bounds, draw =>
-            {
-                var stroke = new SolidColorBrush(Color.FromRgb(0x22, 0xCC, 0x88)); // green
-                stroke.Freeze();
+                      {
+                          // Draw slice paths (perimeters/shells)
+                          if (slice != null && slice.Count > 0)
+                          {
+                              var stroke = new SolidColorBrush(Color.FromRgb(0x22, 0xCC, 0x88)); // green
+                              stroke.Freeze();
 
-                foreach (var loop in polygons)
-                {
-                    if (loop == null || loop.Count < 1) continue;
+                              foreach (var path in slice)
+                              {
+                                  if (path == null || path.Count < 2) continue;
 
-                    var fig = new PathFigure { IsClosed = true, IsFilled = false, StartPoint = draw(loop[0].Start) };
-                    var seg = new PolyLineSegment();
-                    foreach (var e in loop) seg.Points.Add(draw(e.End));
-                    fig.Segments.Add(seg);
+                                  var fig = new PathFigure
+                                  {
+                                      IsClosed = true,
+                                      IsFilled = false,
+                                      StartPoint = draw(new Point3D(path[0].x, path[0].y, 0))
+                                  };
+                                  var seg = new PolyLineSegment();
+                                  for (int i = 1; i < path.Count; i++)
+                                  {
+                                      seg.Points.Add(draw(new Point3D(path[i].x, path[i].y, 0)));
+                                  }
+                                  fig.Segments.Add(seg);
 
-                    var geo = new PathGeometry();
-                    geo.Figures.Add(fig);
+                                  var geo = new PathGeometry();
+                                  geo.Figures.Add(fig);
 
-                    canvas.Children.Add(new Path
-                    {
-                        Data = geo,
-                        Stroke = stroke,
-                        StrokeThickness = strokePx,
-                        StrokeLineJoin = PenLineJoin.Round
-                    });
-                }
-            });
+                                  canvas.Children.Add(new Path
+                                  {
+                                      Data = geo,
+                                      Stroke = stroke,
+                                      StrokeThickness = strokePx,
+                                      StrokeLineJoin = PenLineJoin.Round
+                                  });
+                              }
+                          }
+
+                          // Draw infill lines
+                          if (infill != null && infill.Count > 0)
+                          {
+                              var infillStroke = new SolidColorBrush(Color.FromRgb(0xFF, 0x90, 0x40)); // orange
+                              infillStroke.Freeze();
+
+                              foreach (var path in infill)
+                              {
+                                  if (path == null || path.Count < 2) continue;
+
+                                  // Draw as line segments
+                                  for (int i = 0; i < path.Count - 1; i++)
+                                  {
+                                      var p1 = draw(new Point3D(path[i].x, path[i].y, 0));
+                                      var p2 = draw(new Point3D(path[i + 1].x, path[i + 1].y, 0));
+
+                                      canvas.Children.Add(new Line
+                                      {
+                                          X1 = p1.X,
+                                          Y1 = p1.Y,
+                                          X2 = p2.X,
+                                          Y2 = p2.Y,
+                                          Stroke = infillStroke,
+                                          StrokeThickness = strokePx * 0.7 // Slightly thinner for infill
+                                      });
+                                  }
+                              }
+                          }
+                      });
         }
 
         // -------- RAW SEGMENTS (auto-fit) --------
@@ -144,6 +187,50 @@ namespace briocheSlicer.Rendering
                 if (p.X < minX) minX = p.X; if (p.Y < minY) minY = p.Y;
                 if (p.X > maxX) maxX = p.X; if (p.Y > maxY) maxY = p.Y;
             }
+            double w = Math.Max(1e-9, maxX - minX);
+            double h = Math.Max(1e-9, maxY - minY);
+            return new Rect(minX, minY, w, h);
+        }
+
+        private static Rect ComputeBoundsFromPathsD(PathsD? slice, PathsD? infill)
+        {
+            double minX = double.PositiveInfinity, minY = double.PositiveInfinity;
+            double maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
+
+            bool hasPoints = false;
+
+            if (slice != null)
+            {
+                foreach (var path in slice)
+                {
+                    foreach (var pt in path)
+                    {
+                        hasPoints = true;
+                        if (pt.x < minX) minX = pt.x;
+                        if (pt.y < minY) minY = pt.y;
+                        if (pt.x > maxX) maxX = pt.x;
+                        if (pt.y > maxY) maxY = pt.y;
+                    }
+                }
+            }
+
+            if (infill != null)
+            {
+                foreach (var path in infill)
+                {
+                    foreach (var pt in path)
+                    {
+                        hasPoints = true;
+                        if (pt.x < minX) minX = pt.x;
+                        if (pt.y < minY) minY = pt.y;
+                        if (pt.x > maxX) maxX = pt.x;
+                        if (pt.y > maxY) maxY = pt.y;
+                    }
+                }
+            }
+
+            if (!hasPoints) return Rect.Empty;
+
             double w = Math.Max(1e-9, maxX - minX);
             double h = Math.Max(1e-9, maxY - minY);
             return new Rect(minX, minY, w, h);

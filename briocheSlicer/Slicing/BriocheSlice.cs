@@ -32,6 +32,16 @@ namespace briocheSlicer.Slicing
             return polygons;
         }
 
+        public PathsD? GetSlice()
+        {
+            return slice;
+        }
+
+        public PathsD? GetInfill()
+        {
+            return infill;
+        }
+
         /// <summary>
         /// Connects edges to form closed polygon loops.
         /// Handles vertex snapping, adjacency building, and loop formation.
@@ -125,13 +135,12 @@ namespace briocheSlicer.Slicing
             PathsD infillRegion = Clipper.InflatePaths(innerMost, -shrink, JoinType.Round, EndType.Polygon);
 
             // Create the infill bounding box that minimally cover the infill region
-            var spacing = settings.NozzleDiameter * 2;
+            var spacing = settings.NozzleDiameter * 1.5;
             var bounds = Clipper.GetBounds(infillRegion);
-            double pad = spacing * 2.0;
-            double minx = bounds.left - pad; 
-            double maxx = bounds.right + pad;
-            double miny = bounds.bottom - pad;
-            double maxy = bounds.top + pad;
+            double minx = bounds.left; 
+            double maxx = bounds.right;
+            double miny = bounds.top;
+            double maxy = bounds.bottom;
 
             // Create basic infill lines
             PathsD grid = new PathsD();

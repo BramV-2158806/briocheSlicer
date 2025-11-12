@@ -18,6 +18,10 @@ namespace briocheSlicer.Slicing
 
         public BriocheSlice GetSlice(int index)
         {
+            if (index < 0 || index >= layers.Count)
+            {
+                return new BriocheSlice(new List<BriocheEdge>(), 0, null);
+            }
             return layers[index];
         }
 
