@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Clipper2Lib;
 
 namespace briocheSlicer.Workers
 {
@@ -56,14 +57,81 @@ namespace briocheSlicer.Workers
             gcode.AppendLine($"; Layer {layerIndex}");
 
             // Move to layer height - keep in mind the mid layer slicing
-            gcode.AppendLine($"G1 F{settings.TravelSpeed * 60:F0} Z{settings.LayerHeight * (layerIndex + 0.5)}");
+            // remove thi mis layer slicing so we start from the bottom but we sliced 
+            // in the middle of the layer
+            gcode.AppendLine($"G1 F{settings.TravelSpeed * 60:F0} Z{settings.LayerHeight * (layerIndex)}");
 
-            // Process each polygon in the slice
-            // TODO create toolpaths and print using PATHSD from clipper instead of BriocheEdges
-            var polygons = slice.getPolygons();
-            foreach (var polygon in polygons)
+            // Print perimiter
+            AddShellCode(gcode, slice, settings);
+
+            // Print infill
+            AddInfillCode(gcode, slice, settings);
+        }
+
+        private void AddShellCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings)
+        {
+            PathsD? shellPaths = slice.GetSlice();
+            if (shellPaths == null || shellPaths.Count == 0) return;
+
+            // Trace each shell path
+            foreach (var path in shellPaths)
             {
-                AddPolygonCode(gcode, polygon, settings);
+                if (path == null || path.Count < 2) continue;
+
+                // Move to start position
+                var firstPoint = path[0];
+                gcode.AppendLine($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x:F3} Y{firstPoint.y:F3}");
+
+                // Extrude along the shell perimeter
+                for (int i = 1; i < path.Count; i++)
+                {
+                    var currentPoint = path[i];
+                    var previousPoint = path[i - 1];
+                    double extrusion = CalculateExtrusion(previousPoint, currentPoint, settings);
+
+                    gcode.AppendLine($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x:F3} Y{currentPoint.y:F3} E{extrusion:F5}");
+                }
+
+                // Close the loop by returning to the start point
+                var startPoint = path[0];
+                var lastPoint = path[path.Count - 1];
+                double closingEdgeLength = Math.Sqrt(
+                    Math.Pow(startPoint.x - lastPoint.x, 2) + 
+                    Math.Pow(startPoint.y - lastPoint.y, 2)
+                );
+                
+                if (closingEdgeLength > 1e-6) // Only close if there's a gap
+                {
+                    double closingExtrusion = (settings.LayerHeight * settings.NozzleDiameter * closingEdgeLength) / 
+                                          settings.FilamentDiameter * settings.ExtrusionMultiplier;
+                    gcode.AppendLine($"G1 F{settings.PrintSpeed * 60:F0} X{startPoint.x:F3} Y{startPoint.y:F3} E{closingExtrusion:F5}");
+                }
+            }
+        }
+
+        private void AddInfillCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings)
+        {
+            PathsD? infillPaths = slice.GetInfill();
+            if (infillPaths == null || infillPaths.Count == 0) return;
+
+            // Process each infill line (these are open paths)
+            foreach (var path in infillPaths)
+            {
+                if (path == null || path.Count < 2) continue;
+
+                // Move to start position of infill line (travel move, no extrusion)
+                var firstPoint = path[0];
+                gcode.AppendLine($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x:F3} Y{firstPoint.y:F3}");
+
+                // Extrude along the infill line
+                for (int i = 1; i < path.Count; i++)
+                {
+                    var currentPoint = path[i];
+                    var previousPoint = path[i - 1];
+                    double extrusion = CalculateExtrusion(previousPoint, currentPoint, settings);
+
+                    gcode.AppendLine($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x:F3} Y{currentPoint.y:F3} E{extrusion:F5}");
+                }
             }
         }
 
@@ -98,6 +166,15 @@ namespace briocheSlicer.Workers
             );
             double result = (settings.LayerHeight * settings.NozzleDiameter * edge_length)/settings.FilamentDiameter;
             return (double) result * settings.ExtrusionMultiplier;
+        }
+        private double CalculateExtrusion(PointD start, PointD end, GcodeSettings settings)
+        {
+            double edge_length = Math.Sqrt(
+                Math.Pow(end.x - start.x, 2) +
+                Math.Pow(end.y - start.y, 2)
+            );
+            double result = (settings.LayerHeight * settings.NozzleDiameter * edge_length) / settings.FilamentDiameter;
+            return result * settings.ExtrusionMultiplier;
         }
 
 
