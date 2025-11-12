@@ -16,12 +16,15 @@ namespace briocheSlicer.Slicing
         private const double EPSILON = 1e-6; // Tolerance for floating point comparison
         private readonly double slice_height;
         private PathsD? slice;
+        private PathsD? infill;
 
         public BriocheSlice(List<BriocheEdge> edges, double z, GcodeSettings settings)
         {
             this.slice_height = z;
             this.polygons = Connect_Edges(edges);
-            this.slice = Convert_To_Clipper_Slice(settings);
+
+            var cleanSlice = Convert_To_Clipper_Slice(settings);
+            Enforce_Print_Settings(cleanSlice, settings);
         }
 
         public List<List<BriocheEdge>> getPolygons()
@@ -43,14 +46,14 @@ namespace briocheSlicer.Slicing
 
             var snap = new Snapper(EPSILON);
 
-            // Step 1: Normalize and filter edges to remove duplicates and degenerate cases
+            // Normalize and filter edges to remove duplicates and degenerate cases
             var edges = NormalizeAndFilterEdges(unfilteredEdges, snap);
             if (edges.Count == 0) return result;
 
-            // Step 2: Build adjacency graph for efficient neighbor lookup
+            // Build adjacency graph for efficient neighbor lookup
             var adjacencyList = BuildAdjacencyList(edges, snap);
 
-            // Step 3: Form closed loops from connected edges
+            // Form closed loops from connected edges
             var loops = FormClosedLoops(edges, adjacencyList, snap);
 
             return loops;
@@ -62,14 +65,97 @@ namespace briocheSlicer.Slicing
             PathsD rawSlice = Convert_Polygon_To_Clipper(polygons);
 
             // Apply the fill in rule
-            PathsD cleanedSlice = Clipper.Union(rawSlice, FillRule.EvenOdd);
+            return Clipper.Union(rawSlice, FillRule.EvenOdd);
+        }
 
+
+        private List<PathsD> Generate_Shells(in PathsD cleanSlice, GcodeSettings settings)
+        {
+            // Create list of shells and add the perimiter
+            var shells = new List<PathsD>();
+            shells.Add(cleanSlice);
+
+            // For each shell, move the nozzlethickness inward
+            for (int i = 0; i < settings.NumberShells; i++)
+            {
+                double delta = -i * settings.NozzleDiameter;
+                var shell = Clipper.InflatePaths(cleanSlice, delta, JoinType.Round, EndType.Polygon);
+                shells.Add(shell);
+            }
+            return shells;
+        }
+
+        private void Enforce_Print_Settings(PathsD cleanSlice, GcodeSettings settings)
+        {
             // Erode the permites
             // Negative delta (erosion) half of the size of the nozzle diameter
             double delta = -(settings.NozzleDiameter / 2.0);
-            cleanedSlice = Clipper.InflatePaths(cleanedSlice, delta, JoinType.Round, EndType.Round);
+            cleanSlice = Clipper.InflatePaths(cleanSlice, delta, JoinType.Round, EndType.Polygon);
 
-            return cleanedSlice;
+            // Add the amount of outer shells
+            var shells = Generate_Shells(cleanSlice, settings);
+            PathsD outerLayer = new PathsD();
+            foreach (var shell in shells) // Combine all shells into one PathsD
+            {
+                outerLayer.AddRange(shell);
+            }
+
+            // Add basic infill
+            PathsD infillLines = Generate_Infill(shells, settings);
+
+            // Store the final slice and infill
+            this.slice = outerLayer;
+            this.infill = infillLines;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="infillRegion">
+        /// The inner most outer shell. This is the region where the infill will be generated.
+        /// </param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        private PathsD Generate_Infill(List<PathsD> shells, GcodeSettings settings)
+        {
+            // Create the infill region
+            PathsD innerMost = shells.Last();
+            double infillOverlap = 0.10 * settings.NozzleDiameter; // overlap with outer wall
+            double shrink = (settings.NozzleDiameter / 2.0) + infillOverlap;
+            PathsD infillRegion = Clipper.InflatePaths(innerMost, -shrink, JoinType.Round, EndType.Polygon);
+
+            // Create the infill bounding box that minimally cover the infill region
+            var spacing = settings.NozzleDiameter * 2;
+            var bounds = Clipper.GetBounds(infillRegion);
+            double pad = spacing * 2.0;
+            double minx = bounds.left - pad; 
+            double maxx = bounds.right + pad;
+            double miny = bounds.bottom - pad;
+            double maxy = bounds.top + pad;
+
+            // Create basic infill lines
+            PathsD grid = new PathsD();
+            for (double y = miny; y <= maxy; y += spacing)
+            {
+                // Horizontal line spanning bounding box
+                var p0 = new PointD(minx, y);
+                var p1 = new PointD(maxx, y);
+
+                var line = new PathD { p0, p1 };
+                grid.Add(line);
+            }
+
+            // Clip the infill lines to the infill region
+            var clipper = new ClipperD();
+            clipper.AddOpenSubject(grid); 
+            clipper.AddClip(infillRegion); 
+
+            PathsD insideClosed = new PathsD(); // represent polygons: not intersted here
+            PathsD insideOpen = new PathsD(); // represent open lines: we want to clip to this
+            clipper.Execute(ClipType.Intersection, FillRule.EvenOdd, insideClosed, insideOpen);
+
+            // Remove degenerate lines and points and return the infill
+            return Clipper.SimplifyPaths(insideOpen, 1e-9, isClosedPath: false);
         }
 
         private static PathsD Convert_Polygon_To_Clipper(List<List<BriocheEdge>> polies)

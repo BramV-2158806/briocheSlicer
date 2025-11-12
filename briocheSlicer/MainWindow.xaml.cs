@@ -196,6 +196,45 @@ namespace briocheSlicer
         }
 
         /// <summary>
+        /// Validates that only numeric input is allowed for the shells textbox.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ShellsTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // Only allow digits
+            e.Handled = !int.TryParse(e.Text, out _);
+        }
+
+        /// <summary>
+        /// Validates that the number of shells is at least 1.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ShellsTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                // If the text is empty or cannot be parsed as an integer
+                if (string.IsNullOrWhiteSpace(textBox.Text) || !int.TryParse(textBox.Text, out int shells))
+                {
+                    textBox.Background = Brushes.LightPink;
+                    return;
+                }
+
+                // If the number is less than 1, show validation error
+                if (shells < 1)
+                {
+                    textBox.Background = Brushes.LightPink;
+                }
+                else
+                {
+                    textBox.Background = Brushes.White;
+                }
+            }
+        }
+
+        /// <summary>
         /// Handles the Slice button click event.
         /// Validates inputs and initiates the slicing process.
         /// </summary>
@@ -219,6 +258,14 @@ namespace briocheSlicer
                 return;
             }
 
+            // Validate number of shells input
+            if (!int.TryParse(ShellsTextBox.Text, out int shells) || shells < 1)
+            {
+                MessageBox.Show("Please enter a valid number of shells (must be at least 1).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Validate model is loaded
             if (pureModel == null)
             {
@@ -232,7 +279,7 @@ namespace briocheSlicer
             slicer.Set_Nozzle_Diameter(nozzleDiameter);
             gcodeSettings.LayerHeight = layerHeight;
             gcodeSettings.NozzleDiameter = nozzleDiameter;
-            // Use the pure model loaded earlier
+            gcodeSettings.NumberShells = shells;
 
 
             // Enable the slice height slider

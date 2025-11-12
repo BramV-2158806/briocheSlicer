@@ -18,13 +18,18 @@ namespace briocheSlicer.Gcode
         public double ExtrusionMultiplier { get; set; } = 1.0;
         public double FilamentDiameter { get; set; } = 1.75;
 
+        // New member: number of shells (integer), default 1
+        public int NumberShells { get; set; } = 1;
+
+
         public GcodeSettings(
             double nozzleDiameter = 0.4,
             double layerHeight = 0.2,
             double printSpeed = 50,
             double travelSpeed = 150,
             double extrusionMultiplier = 1.0,
-            double filamentDiameter = 1.75)
+            double filamentDiameter = 1.75,
+            int numberShells = 1)
         {
             NozzleDiameter = nozzleDiameter;
             LayerHeight = layerHeight;
@@ -32,6 +37,7 @@ namespace briocheSlicer.Gcode
             TravelSpeed = travelSpeed;
             ExtrusionMultiplier = extrusionMultiplier;
             FilamentDiameter = filamentDiameter;
+            NumberShells = numberShells;
         }
     }
 }

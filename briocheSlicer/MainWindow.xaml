@@ -26,6 +26,17 @@
                 ToolTip="Nozzle diameter in millimeters"/>
             <Separator/>
 
+            <!-- Number of Shells Input -->
+            <TextBlock Text="Shells:" VerticalAlignment="Center" Margin="5,0"/>
+            <TextBox x:Name="ShellsTextBox" 
+                Width="40" 
+                Text="3" 
+                VerticalContentAlignment="Center"
+                PreviewTextInput="ShellsTextBox_PreviewTextInput"
+                TextChanged="ShellsTextBox_TextChanged"
+                ToolTip="Number of perimeter shells (minimum 1)"/>
+            <Separator/>
+
             <!-- Slice Button -->
             <Button Content="Slice" 
                 Click="Slice_Click" 
