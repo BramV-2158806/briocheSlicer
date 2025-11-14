@@ -19,6 +19,7 @@ using briocheSlicer.Workers;
 using HelixToolkit.Wpf;
 using Microsoft.Win32;
 using briocheSlicer.Gcode;
+using System.IO;
 
 namespace briocheSlicer
 {
@@ -307,14 +308,22 @@ namespace briocheSlicer
                 return;
             }
 
-            // Parse the brioche model to gcode
-            // For now, the briocheModel wil only have the current slicing plane
-            // slice. Ofcourse later this should be the entire model but now we dont have to
-            // change this code when that happens.
-            codeGenerator.Generate(briocheModel, new Gcode.GcodeSettings(), "brioche_slicer_output.gcode");
+            // Get the Downloads folder path
+            string downloadsPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), 
+                "Downloads"
+            );
+            
+            // Create filename with timestamp to avoid overwriting
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string filename = $"brioche_slicer_output_{timestamp}.gcode";
+            string fullPath = System.IO.Path.Combine(downloadsPath, filename);
+
+            // Generate G-code
+            codeGenerator.Generate(briocheModel, gcodeSettings, fullPath);
 
             // Add positive affordance
-            MessageBox.Show("G-code generated successfully!",
+            MessageBox.Show($"G-code saved successfully to:\n{fullPath}",
                             "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
