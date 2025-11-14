@@ -79,19 +79,23 @@ namespace briocheSlicer.Slicing
         }
 
 
-        private List<PathsD> Generate_Shells(in PathsD cleanSlice, GcodeSettings settings)
+        private List<PathsD> Generate_Shells(PathsD cleanSlice, GcodeSettings settings)
         {
-            // Create list of shells and add the perimiter
             var shells = new List<PathsD>();
-            shells.Add(cleanSlice);
 
-            // For each shell, move the nozzlethickness inward
-            for (int i = 0; i < settings.NumberShells; i++)
+            // Add the outer perimeter
+            PathsD currentShell = cleanSlice;
+            shells.Add(currentShell); 
+            
+            // Generate each additional shell by offsetting from the previous one
+            for (int i = 1; i < settings.NumberShells; i++)
             {
-                double delta = -i * settings.NozzleDiameter;
-                var shell = Clipper.InflatePaths(cleanSlice, delta, JoinType.Round, EndType.Polygon);
-                shells.Add(shell);
+                // Offset inward by one nozzle width
+                double delta = -settings.NozzleDiameter;
+                currentShell = Clipper.InflatePaths(currentShell, delta, JoinType.Round, EndType.Polygon);
+                shells.Add(currentShell);
             }
+            
             return shells;
         }
 
@@ -131,7 +135,7 @@ namespace briocheSlicer.Slicing
             // Create the infill region
             PathsD innerMost = shells.Last();
             double infillOverlap = 0.10 * settings.NozzleDiameter; // overlap with outer wall
-            double shrink = (settings.NozzleDiameter / 2.0) + infillOverlap;
+            double shrink = (settings.NozzleDiameter / 2.0) - infillOverlap;
             PathsD infillRegion = Clipper.InflatePaths(innerMost, -shrink, JoinType.Round, EndType.Polygon);
 
             // Create the infill bounding box that minimally cover the infill region

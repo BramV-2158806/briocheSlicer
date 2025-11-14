@@ -15,7 +15,7 @@ namespace briocheSlicer.Gcode
         public double LayerHeight { get; set; } = 0.2;
         public double PrintSpeed { get; set; } = 50;
         public double TravelSpeed { get; set; } = 150;
-        public double ExtrusionMultiplier { get; set; } = 1.0; // mogelijks 0.015 als we kijke naar colibratie van assignment 2
+        public double ExtrusionMultiplier { get; set; } = 1.0; // mogelijks 0.015 als we kijke naar calibratie van assignment 2
         public double FilamentDiameter { get; set; } = 1.75;
         public double FilamentSurfaceArea { get; set; } = 2.405;
         public int NumberShells { get; set; } = 1;
