@@ -11,14 +11,14 @@ namespace briocheSlicer.Gcode
     /// </summary>
     internal class GcodeSettings
     {
-        public double NozzleDiameter { get; set; } = 0.4;
-        public double LayerHeight { get; set; } = 0.2;
-        public double PrintSpeed { get; set; } = 50;
-        public double TravelSpeed { get; set; } = 150;
-        public double ExtrusionMultiplier { get; set; } = 1.0; // mogelijks 0.015 als we kijke naar calibratie van assignment 2
-        public double FilamentDiameter { get; set; } = 1.75;
-        public double FilamentSurfaceArea { get; set; } = 2.405;
-        public int NumberShells { get; set; } = 1;
+        public double NozzleDiameter { get; set; }
+        public double LayerHeight { get; set; }
+        public double PrintSpeed { get; set; }
+        public double TravelSpeed { get; set; }
+        public double ExtrusionMultiplier { get; set; } // mogelijks 0.015 als we kijke naar calibratie van assignment 2
+        public double FilamentDiameter { get; set; }
+        public double FilamentSurfaceArea { get; set; }
+        public int NumberShells { get; set; }
 
         
 
@@ -28,7 +28,7 @@ namespace briocheSlicer.Gcode
             double layerHeight = 0.2,
             double printSpeed = 50,
             double travelSpeed = 150,
-            double extrusionMultiplier = 1.0,
+            double extrusionMultiplier = 0.98,
             double filamentDiameter = 1.75,
             double filamentSurfaceArea = 2.405,
             int numberShells = 1)

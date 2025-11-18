@@ -65,8 +65,10 @@ namespace briocheSlicer.Workers
             // Move to layer height - keep in mind the mid layer slicing
             // remove thi mis layer slicing so we start from the bottom but we sliced 
             // in the middle of the layer
-            double extrusionHeight = 2 + settings.LayerHeight * layerIndex; // saw that cure starts at 2 + layerHeight
+            double extrusionHeight = settings.LayerHeight * layerIndex; // saw that cure starts at 2 + layerHeight
             gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight}"));
+            gcode.AppendLine(Invariant($"G92 E0"));
+            currentExtrusion = 0;
 
             // Print perimiter
             AddShellCode(gcode, slice, settings);
@@ -107,6 +109,9 @@ namespace briocheSlicer.Workers
                     Math.Pow(startPoint.x - lastPoint.x, 2) + 
                     Math.Pow(startPoint.y - lastPoint.y, 2)
                 );
+                double lastExtrusion = currentExtrusion + CalculateExtrusion(lastPoint, startPoint, settings);
+                currentExtrusion = lastExtrusion;
+                gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{startPoint.x:F3} Y{startPoint.y:F3} E{lastExtrusion:F5}"));
             }
         }
 
@@ -152,7 +157,7 @@ namespace briocheSlicer.Workers
             );
             double result = (settings.LayerHeight * settings.NozzleDiameter * edge_length) / settings.FilamentSurfaceArea;
             return result * settings.ExtrusionMultiplier;
-        }
+         }
 
         /// <summary>
         /// Generates the gcode to print a given brioche model

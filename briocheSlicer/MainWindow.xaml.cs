@@ -243,6 +243,10 @@ namespace briocheSlicer
         /// <param name="e"></param>
         private void Slice_Click(object sender, RoutedEventArgs e)
         {
+            
+            // TODO check text box content for ',' (comma) use instead of '.' (punt)
+
+
             // Validate layer height input
             if (double.TryParse(LayerHeightTextBox.Text, out double layerHeight) && layerHeight <= 0)
             {

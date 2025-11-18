@@ -498,17 +498,17 @@ G2814 Z0.32
 M104 S220 ; prepare to print
 
 ;===== nozzle load line ===============================
-;G90
-;M82
-;G1 Z5 F1200
-;G1 X88 Y-0.5 F20000
-;G1 Z0.3 F1200
+G90
+M82
+G1 Z5 F1200
+G1 X88 Y-0.5 F20000
+G1 Z0.3 F1200
 
-;M109 S220
+M109 S220
 
-;G1 E2 F300
-;G1 X168 E4.989 F6000
-;G1 Z1 F1200
+G1 E2 F300
+G1 X168 E4.989 F6000
+G1 Z1 F1200
 ;===== nozzle load line end ===========================
 
 ;===== extrude cali test ===============================
@@ -596,5 +596,7 @@ G90
 G21
 M82 ; use relative distances for extrusion
 M981 S1 P20000 ;open spaghetti detector
+
+G1 E5
 
 ;===== start G-code model =====================
