@@ -73,13 +73,110 @@ namespace briocheSlicer.Workers
             // Print perimiter
             AddShellCode(gcode, slice, settings);
 
+            // Print roofs and floors
+            AddFloorAndRoofCode(gcode, slice, settings);
+
             // Print infill
             AddInfillCode(gcode, slice, settings);
         }
 
+        /// <summary>
+        /// Adds the G-code for floor and roof paths to the G-code StringBuilder.
+        /// Floor and roof paths are closed paths that need to be traced with extrusion.
+        /// </summary>
+        /// <param name="gcode">The StringBuilder to append G-code to</param>
+        /// <param name="slice">The current slice containing floor and roof paths</param>
+        /// <param name="settings">G-code generation settings</param>
+        private void AddFloorAndRoofCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings)
+        {
+            // Print floor paths
+            PathsD? floorPaths = slice.GetFloor();
+            if (floorPaths != null && floorPaths.Count > 0)
+            {
+                gcode.AppendLine("; Floor");
+                foreach (var path in floorPaths)
+                {
+                    if (path == null || path.Count < 2) continue;
+
+                    // Move to start position (travel move, no extrusion)
+                    var firstPoint = path[0];
+                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x:F3} Y{firstPoint.y:F3}"));
+
+                    // Extrude along the floor path
+                    for (int i = 1; i < path.Count; i++)
+                    {
+                        var currentPoint = path[i];
+                        var previousPoint = path[i - 1];
+                        double extrusion = currentExtrusion + CalculateExtrusion(previousPoint, currentPoint, settings);
+
+                        gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x:F3} Y{currentPoint.y:F3} E{extrusion:F5}"));
+                        currentExtrusion = extrusion;
+                    }
+
+                    // Close the loop by returning to the start point
+                    var startPoint = path[0];
+                    var lastPoint = path[path.Count - 1];
+                    double distance = Math.Sqrt(
+                        Math.Pow(startPoint.x - lastPoint.x, 2) +
+                        Math.Pow(startPoint.y - lastPoint.y, 2)
+                    );
+
+                    // Only close if there's a gap (not already closed)
+                    if (distance > 0.001)
+                    {
+                        double closingExtrusion = currentExtrusion + CalculateExtrusion(lastPoint, startPoint, settings);
+                        gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{startPoint.x:F3} Y{startPoint.y:F3} E{closingExtrusion:F5}"));
+                        currentExtrusion = closingExtrusion;
+                    }
+                }
+            }
+
+            // Print roof paths
+            PathsD? roofPaths = slice.GetRoof();
+            if (roofPaths != null && roofPaths.Count > 0)
+            {
+                gcode.AppendLine("; Roof");
+                foreach (var path in roofPaths)
+                {
+                    if (path == null || path.Count < 2) continue;
+
+                    // Move to start position (travel move, no extrusion)
+                    var firstPoint = path[0];
+                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x:F3} Y{firstPoint.y:F3}"));
+
+                    // Extrude along the roof path
+                    for (int i = 1; i < path.Count; i++)
+                    {
+                        var currentPoint = path[i];
+                        var previousPoint = path[i - 1];
+                        double extrusion = currentExtrusion + CalculateExtrusion(previousPoint, currentPoint, settings);
+
+                        gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x:F3} Y{currentPoint.y:F3} E{extrusion:F5}"));
+                        currentExtrusion = extrusion;
+                    }
+
+                    // Close the loop by returning to the start point
+                    var startPoint = path[0];
+                    var lastPoint = path[path.Count - 1];
+                    double distance = Math.Sqrt(
+                        Math.Pow(startPoint.x - lastPoint.x, 2) +
+                        Math.Pow(startPoint.y - lastPoint.y, 2)
+                    );
+
+                    // Only close if there's a gap (not already closed)
+                    if (distance > 0.001)
+                    {
+                        double closingExtrusion = currentExtrusion + CalculateExtrusion(lastPoint, startPoint, settings);
+                        gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{startPoint.x:F3} Y{startPoint.y:F3} E{closingExtrusion:F5}"));
+                        currentExtrusion = closingExtrusion;
+                    }
+                }
+            }
+        }
+
         private void AddShellCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings)
         {
-            PathsD? shellPaths = slice.GetSlice();
+            PathsD? shellPaths = slice.GetOuterLayer();
             if (shellPaths == null || shellPaths.Count == 0) return;
 
             // Trace each shell path

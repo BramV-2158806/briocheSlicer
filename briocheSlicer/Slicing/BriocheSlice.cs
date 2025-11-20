@@ -12,34 +12,76 @@ namespace briocheSlicer.Slicing
 {
     internal class BriocheSlice
     {
-        private List<List<BriocheEdge>> polygons; // Store multiple polygons
-        private const double EPSILON = 1e-6; // Tolerance for floating point comparison
+        private const double EPSILON = 1e-6;
         private readonly double slice_height;
-        private PathsD? slice;
+
+        // The paths to be printed.
+        // This is the meat of our brioche slice.
+        private PathsD? outerLayer;
         private PathsD? infill;
+        private PathsD? floor;
+        private PathsD? roof;
+
+        private List<PathsD> shells;
+
+        private bool checkedRoof = false;
+        private bool checkedFloor = false;
+
+        private readonly GcodeSettings settings;
 
         public BriocheSlice(List<BriocheEdge> edges, double z, GcodeSettings settings)
         {
             this.slice_height = z;
-            this.polygons = Connect_Edges(edges);
+            this.settings = settings;
+            var polygons = Connect_Edges(edges);
 
-            var cleanSlice = Convert_To_Clipper_Slice(settings);
-            Enforce_Print_Settings(cleanSlice, settings);
+            var cleanSlice = Convert_To_Clipper_Slice(polygons);
+
+            // Execute the first phase of the slicing.
+            // The first phase is done local for each slice
+            cleanSlice = Erode_Perimiter(cleanSlice, settings);
+            this.shells = Generate_Shells(cleanSlice, settings);
+            PathsD outerLayer = new();
+            foreach (var shell in shells) // Combine all shells into one PathsD
+            {
+                outerLayer.AddRange(shell);
+            }
+            this.outerLayer = outerLayer;
         }
 
-        public List<List<BriocheEdge>> getPolygons()
+        public PathsD? GetOuterLayer()
         {
-            return polygons;
+            return outerLayer;
         }
-
-        public PathsD? GetSlice()
-        {
-            return slice;
-        }
-
         public PathsD? GetInfill()
         {
             return infill;
+        }
+        public PathsD? GetFloor()
+        {
+            return floor;
+        }
+        public PathsD? GetRoof()
+        {
+            return roof;
+        }
+
+        public PathsD? GetOuterShell()
+        {
+            if (shells != null && shells.Count > 0)
+            {
+                return shells.First();
+            }
+            return null;
+        }
+
+        public PathsD? GetInnerShell()
+        {
+            if (shells != null && shells.Count > 0)
+            {
+                return shells.Last();
+            }
+            return null;
         }
 
         /// <summary>
@@ -69,7 +111,7 @@ namespace briocheSlicer.Slicing
             return loops;
         }
 
-        private PathsD Convert_To_Clipper_Slice(GcodeSettings settings)
+        private PathsD Convert_To_Clipper_Slice(List<List<BriocheEdge>> polygons)
         {
             // Convert the basic BriochePolygins to a clipper representation
             PathsD rawSlice = Convert_Polygon_To_Clipper(polygons);
@@ -79,11 +121,20 @@ namespace briocheSlicer.Slicing
         }
 
 
+        /// <summary>
+        /// Generates multiple concentric shell perimeters by progressively offsetting inward.
+        /// The returned list contains shells ordered from outermost to innermost:
+        /// - shells[0] or shells.First() gives the outermost perimeter
+        /// - shells[shells.Count - 1] or shells.Last() gives the innermost perimeter
+        /// </summary>
+        /// <param name="cleanSlice">The initial slice geometry to generate shells from</param>
+        /// <param name="settings">Print settings including nozzle diameter and number of shells</param>
+        /// <returns>List of shells ordered from outer to inner perimeter</returns>
         private List<PathsD> Generate_Shells(PathsD cleanSlice, GcodeSettings settings)
         {
             var shells = new List<PathsD>();
 
-            // Add the outer perimeter
+            // Add the outer perimeter (first shell - index 0)
             PathsD currentShell = cleanSlice;
             shells.Add(currentShell); 
             
@@ -99,44 +150,158 @@ namespace briocheSlicer.Slicing
             return shells;
         }
 
-        private void Enforce_Print_Settings(PathsD cleanSlice, GcodeSettings settings)
+        /// <summary>
+        /// Creates a solid inside the perimiter.
+        /// The perimiter itself is not included in this solid.
+        /// </summary>
+        /// <param name="perimiter"></param>
+        /// <returns></returns>
+        private PathsD Generate_Solid(PathsD perimiter)
+        {
+            double delta = -settings.NozzleDiameter;
+
+            // Already inflate once so we dont print the innner shell 2 times
+            var currentPath = Clipper.InflatePaths(perimiter, delta, JoinType.Round, EndType.Polygon);
+
+            var solid = new PathsD();
+            while (true)
+            {
+                currentPath = Clipper.InflatePaths(currentPath, delta, JoinType.Round, EndType.Polygon);
+                
+                // If the new path is empty we can stop
+                if (currentPath.Count == 0)
+                {
+                    break;
+                }
+
+                solid.AddRange(currentPath);
+            }
+            return solid;
+        }
+
+        private PathsD Erode_Perimiter(PathsD cleanSlice, GcodeSettings settings)
         {
             // Erode the permites
             // Negative delta (erosion) half of the size of the nozzle diameter
             double delta = -(settings.NozzleDiameter / 2.0);
-            cleanSlice = Clipper.InflatePaths(cleanSlice, delta, JoinType.Round, EndType.Polygon);
+            return Clipper.InflatePaths(cleanSlice, delta, JoinType.Round, EndType.Polygon);
+        }
 
-            // Add the amount of outer shells
-            var shells = Generate_Shells(cleanSlice, settings);
-            PathsD outerLayer = new PathsD();
-            foreach (var shell in shells) // Combine all shells into one PathsD
+
+        public PathsD Generate_Floor(List<PathsD> innerPerimitersLower, bool isBaseLayer = false)
+        {
+            // Check that phase 1 was completed
+            if (this.outerLayer == null || this.shells == null || GetInnerShell() == null)
             {
-                outerLayer.AddRange(shell);
+                throw new InvalidOperationException("Cannot generate floor: outer layer has not been generated. Ensure slicing and shell generation have completed.");
+            }
+            if (!isBaseLayer && (this.shells.Count == 0))
+            {
+                throw new InvalidOperationException("Cannot generate floor: no shells available for non-base layer. Ensure shell generation has completed.");
+            }
+            checkedFloor = true;
+
+            // We Use the inner perimiter to define the slice
+            // since we already know how the outer perimiter shoukd print.
+            var currentPerim = GetInnerShell();
+
+            if (isBaseLayer)
+            {
+                // For the base layer, we fill the entire area
+                this.floor = Generate_Solid(currentPerim);
+
+                return this.floor;
             }
 
-            // Add basic infill
-            PathsD infillLines = Generate_Infill(shells, settings);
+            var intersectedLower = IntersectAll(innerPerimitersLower);
 
-            // Store the final slice and infill
-            this.slice = outerLayer;
-            this.infill = infillLines;
+            // Solid_i - intersect(solid_i-1 ... solid_i-n)
+            var floor = Clipper.Difference(currentPerim, intersectedLower, FillRule.NonZero);
+
+            // Fill in the floor
+            this.floor = Generate_Solid(floor);
+
+            return floor;
+        } 
+
+        public PathsD Generate_Roof(List<PathsD> innerPerimitersUpper, bool isTopLayer = false)
+        {
+            // Check that phase 1 was completed
+            if (this.outerLayer == null || this.shells == null || GetInnerShell() == null)
+            {
+                throw new InvalidOperationException("Cannot generate roof: outer layer has not been generated. Ensure slicing and shell generation have completed.");
+            }
+            if (!isTopLayer && (this.shells.Count == 0))
+            {
+                throw new InvalidOperationException("Cannot generate roof: no shells available for non-top layer. Ensure shell generation has completed.");
+            }
+            checkedRoof = true;
+
+            var currentPerim = GetInnerShell();
+            if (isTopLayer)
+            {
+                // For the top layer, we fill the entire area
+                this.roof = Generate_Solid(currentPerim);
+                return this.roof;
+            }
+            var intersectedUpper = IntersectAll(innerPerimitersUpper);
+
+            // Solid_i - intersect(solid_i-1 ... solid_i-n)
+            var roof = Clipper.Difference(currentPerim, intersectedUpper, FillRule.NonZero);
+
+            // Fill in the roof
+            this.roof = Generate_Solid(roof);
+            return roof;
+        }
+
+        /// <summary>
+        /// 
+        /// This function is generated by AI.
+        /// </summary>
+        /// <param name="inputSets"></param>
+        /// <param name="fillRule"></param>
+        /// <returns></returns>
+        private PathsD IntersectAll(List<PathsD> inputSets, FillRule fillRule = FillRule.NonZero)
+        {
+            // 1. specific checks
+            if (inputSets == null || inputSets.Count == 0)
+                return new PathsD();
+
+            // 2. Start with the first set of paths as the "Accumulator"
+            PathsD result = inputSets[0];
+
+            // 3. Iterate through the rest of the list
+            for (int i = 1; i < inputSets.Count; i++)
+            {
+                // If at any point the result becomes empty, there is no common intersection.
+                // We can stop early to save processing time.
+                if (result.Count == 0) break; // Note self: Intersection of empty with full is empty.
+
+                // 4. Intersect the current result with the next set in the list
+                // resulting in a smaller and smaller common area.
+                result = Clipper.Intersect(result, inputSets[i], fillRule);
+            }
+
+            return result;
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="infillRegion">
-        /// The inner most outer shell. This is the region where the infill will be generated.
-        /// </param>
-        /// <param name="settings"></param>
         /// <returns></returns>
-        private PathsD Generate_Infill(List<PathsD> shells, GcodeSettings settings)
+        public PathsD Generate_Infill()
         {
             // Create the infill region
-            PathsD innerMost = shells.Last();
+            PathsD innerMost = GetInnerShell();
             double infillOverlap = 0.10 * settings.NozzleDiameter; // overlap with outer wall
             double shrink = (settings.NozzleDiameter / 2.0) - infillOverlap;
             PathsD infillRegion = Clipper.InflatePaths(innerMost, -shrink, JoinType.Round, EndType.Polygon);
+
+            // Exclude roof/floor solids if they exist We dont want to infill those again.
+            if (floor != null && floor.Count > 0)
+                infillRegion = Clipper.Difference(infillRegion, floor, FillRule.NonZero);
+            if (roof != null && roof.Count > 0)
+                infillRegion = Clipper.Difference(infillRegion, roof, FillRule.NonZero);
 
             // Create the infill bounding box that minimally cover the infill region
             var spacing = settings.NozzleDiameter * 1.5;
@@ -168,7 +333,13 @@ namespace briocheSlicer.Slicing
             clipper.Execute(ClipType.Intersection, FillRule.EvenOdd, insideClosed, insideOpen);
 
             // Remove degenerate lines and points and return the infill
-            return Clipper.SimplifyPaths(insideOpen, 1e-9, isClosedPath: false);
+            this.infill = Clipper.SimplifyPaths(insideOpen, 1e-9, isClosedPath: false);
+            return this.infill;
+        }
+
+        public bool Is_Ready_To_Print()
+        {
+            return outerLayer != null && infill != null && checkedFloor && checkedRoof;
         }
 
         private static PathsD Convert_Polygon_To_Clipper(List<List<BriocheEdge>> polies)

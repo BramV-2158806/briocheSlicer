@@ -198,7 +198,7 @@ namespace briocheSlicer.Workers
             }
 
             // Add all the slices to form the brioche model.
-            return new BriocheModel(slices);
+            return new BriocheModel(slices, settings);
         }
     }
 }

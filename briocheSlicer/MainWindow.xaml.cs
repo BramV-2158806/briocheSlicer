@@ -345,15 +345,19 @@ namespace briocheSlicer
             int layerIndex = (int)Math.Floor((z - modelBounds.Z) / layerHeight.Value);
 
             // Get the slice of the current layer
-            var currentSlice = briocheModel.GetSlice(layerIndex); 
-            var slice = currentSlice.GetSlice();
+            var currentSlice = briocheModel.GetSlice(layerIndex);
+            if (currentSlice == null) return;
+
+            var slice = currentSlice.GetOuterLayer();
             var infill = currentSlice.GetInfill();
+            var roof = currentSlice.GetRoof();
+            var floor = currentSlice.GetFloor();
 
             // Draw the 2D slice
             if (slice != null && slice.Count > 0)
             {
                 // Show slice paths and infill
-                SliceRenderer.DrawSliceAutoFit(SliceCanvas, slice, infill);
+                SliceRenderer.DrawSliceAutoFit(SliceCanvas, slice, infill, floor, roof);
             }
             else
             {

@@ -13,82 +13,157 @@ namespace briocheSlicer.Rendering
 {
     internal static class SliceRenderer
     {
-        // -------- PATHSD (auto-fit) --------
-        public static void DrawSliceAutoFit(Canvas canvas, PathsD? slice, PathsD? infill = null,
-         double strokePx = 1.5, double marginPercent = 0.06)
+        public static void DrawSliceAutoFit
+            (
+            Canvas canvas, PathsD? slice, PathsD? infill = null,
+            PathsD? floor = null, PathsD? roof = null,
+            double strokePx = 1.5, double marginPercent = 0.06
+            )
         {
             canvas.Children.Clear();
-            if ((slice == null || slice.Count == 0) && (infill == null || infill.Count == 0)) return;
+            if ((slice == null || slice.Count == 0) && 
+        (infill == null || infill.Count == 0) && 
+        (floor == null || floor.Count == 0) && 
+        (roof == null || roof.Count == 0)) return;
 
-            var bounds = ComputeBoundsFromPathsD(slice, infill);
+            var bounds = ComputeBoundsFromPathsD(slice, infill, floor, roof);
 
             DrawUsingTransform(canvas, strokePx, marginPercent, bounds, draw =>
-                      {
-                          // Draw slice paths (perimeters/shells)
-                          if (slice != null && slice.Count > 0)
-                          {
-                              var stroke = new SolidColorBrush(Color.FromRgb(0x22, 0xCC, 0x88)); // green
-                              stroke.Freeze();
+            {
+                // Draw slice paths (perimeters/shells)
+                if (slice != null && slice.Count > 0) 
+                {
+                    var stroke = new SolidColorBrush(Color.FromRgb(0x22, 0xCC, 0x88)); // green
+                    stroke.Freeze();
 
-                              foreach (var path in slice)
-                              {
-                                  if (path == null || path.Count < 2) continue;
+                    foreach (var path in slice)
+                    {
+                        if (path == null || path.Count < 2) continue;
 
-                                  var fig = new PathFigure
-                                  {
-                                      IsClosed = true,
-                                      IsFilled = false,
-                                      StartPoint = draw(new Point3D(path[0].x, path[0].y, 0))
-                                  };
-                                  var seg = new PolyLineSegment();
-                                  for (int i = 1; i < path.Count; i++)
-                                  {
-                                      seg.Points.Add(draw(new Point3D(path[i].x, path[i].y, 0)));
-                                  }
-                                  fig.Segments.Add(seg);
+                        var fig = new PathFigure
+                        {
+                            IsClosed = true,
+                            IsFilled = false,
+                            StartPoint = draw(new Point3D(path[0].x, path[0].y, 0))
+                        };
+                        var seg = new PolyLineSegment();
+                        for (int i = 1; i < path.Count; i++)
+                        {
+                            seg.Points.Add(draw(new Point3D(path[i].x, path[i].y, 0)));
+                        }
+                        fig.Segments.Add(seg);
 
-                                  var geo = new PathGeometry();
-                                  geo.Figures.Add(fig);
+                        var geo = new PathGeometry();
+                        geo.Figures.Add(fig);
 
-                                  canvas.Children.Add(new Path
-                                  {
-                                      Data = geo,
-                                      Stroke = stroke,
-                                      StrokeThickness = strokePx,
-                                      StrokeLineJoin = PenLineJoin.Round
-                                  });
-                              }
-                          }
+                        canvas.Children.Add(new Path
+                        {
+                            Data = geo,
+                            Stroke = stroke,
+                            StrokeThickness = strokePx,
+                            StrokeLineJoin = PenLineJoin.Round
+                        });
+                    }
+                }
 
-                          // Draw infill lines
-                          if (infill != null && infill.Count > 0)
-                          {
-                              var infillStroke = new SolidColorBrush(Color.FromRgb(0xFF, 0x90, 0x40)); // orange
-                              infillStroke.Freeze();
+                // Draw floor 
+                var floorRoofStroke = new SolidColorBrush(Color.FromRgb(0xAA, 0x66, 0xCC));
+                floorRoofStroke.Freeze();
 
-                              foreach (var path in infill)
-                              {
-                                  if (path == null || path.Count < 2) continue;
+                if (floor != null && floor.Count > 0)
+                {
+                    foreach (var path in floor)
+                    {
+                        if (path == null || path.Count < 2) continue;
 
-                                  // Draw as line segments
-                                  for (int i = 0; i < path.Count - 1; i++)
-                                  {
-                                      var p1 = draw(new Point3D(path[i].x, path[i].y, 0));
-                                      var p2 = draw(new Point3D(path[i + 1].x, path[i + 1].y, 0));
+                        var fig = new PathFigure
+                        {
+                            IsClosed = true,
+                            IsFilled = false,
+                            StartPoint = draw(new Point3D(path[0].x, path[0].y, 0))
+                        };
+                        var seg = new PolyLineSegment();
+                        for (int i = 1; i < path.Count; i++)
+                        {
+                            seg.Points.Add(draw(new Point3D(path[i].x, path[i].y, 0)));
+                        }
+                        fig.Segments.Add(seg);
 
-                                      canvas.Children.Add(new Line
-                                      {
-                                          X1 = p1.X,
-                                          Y1 = p1.Y,
-                                          X2 = p2.X,
-                                          Y2 = p2.Y,
-                                          Stroke = infillStroke,
-                                          StrokeThickness = strokePx * 0.7 // Slightly thinner for infill
-                                      });
-                                  }
-                              }
-                          }
-                      });
+                        var geo = new PathGeometry();
+                        geo.Figures.Add(fig);
+
+                        canvas.Children.Add(new Path
+                        {
+                            Data = geo,
+                            Stroke = floorRoofStroke,
+                            StrokeThickness = strokePx * 0.8,
+                            StrokeLineJoin = PenLineJoin.Round
+                        });
+                    }
+                }
+
+                // Draw roof
+                if (roof != null && roof.Count > 0)
+                {
+                    foreach (var path in roof)
+                    {
+                        if (path == null || path.Count < 2) continue;
+
+                        var fig = new PathFigure
+                        {
+                            IsClosed = true,
+                            IsFilled = false,
+                            StartPoint = draw(new Point3D(path[0].x, path[0].y, 0))
+                        };
+                        var seg = new PolyLineSegment();
+                        for (int i = 1; i < path.Count; i++)
+                        {
+                            seg.Points.Add(draw(new Point3D(path[i].x, path[i].y, 0)));
+                        }
+                        fig.Segments.Add(seg);
+
+                        var geo = new PathGeometry();
+                        geo.Figures.Add(fig);
+
+                        canvas.Children.Add(new Path
+                        {
+                            Data = geo,
+                            Stroke = floorRoofStroke,
+                            StrokeThickness = strokePx * 0.8,
+                            StrokeLineJoin = PenLineJoin.Round
+                        });
+                    }
+                }
+
+                // Draw infill lines
+                if (infill != null && infill.Count > 0)
+                {
+                    var infillStroke = new SolidColorBrush(Color.FromRgb(0xFF, 0x90, 0x40)); // orange
+                    infillStroke.Freeze();
+
+                    foreach (var path in infill)
+                    {
+                        if (path == null || path.Count < 2) continue;
+
+                        // Draw as line segments
+                        for (int i = 0; i < path.Count - 1; i++)
+                        {
+                            var p1 = draw(new Point3D(path[i].x, path[i].y, 0));
+                            var p2 = draw(new Point3D(path[i + 1].x, path[i + 1].y, 0));
+
+                            canvas.Children.Add(new Line
+                            {
+                                X1 = p1.X,
+                                Y1 = p1.Y,
+                                X2 = p2.X,
+                                Y2 = p2.Y,
+                                Stroke = infillStroke,
+                                StrokeThickness = strokePx * 0.7 // Slightly thinner for infill
+                            });
+                        }
+                    }
+                }
+            });
         }
 
         // -------- RAW SEGMENTS (auto-fit) --------
@@ -228,6 +303,41 @@ namespace briocheSlicer.Rendering
                     }
                 }
             }
+
+            if (!hasPoints) return Rect.Empty;
+
+            double w = Math.Max(1e-9, maxX - minX);
+            double h = Math.Max(1e-9, maxY - minY);
+            return new Rect(minX, minY, w, h);
+        }
+
+        // Add this overload to handle 4 arguments for ComputeBoundsFromPathsD
+        private static Rect ComputeBoundsFromPathsD(PathsD? slice, PathsD? infill, PathsD? floor, PathsD? roof)
+        {
+            double minX = double.PositiveInfinity, minY = double.PositiveInfinity;
+            double maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
+            bool hasPoints = false;
+
+            void UpdateBounds(PathsD? paths)
+            {
+                if (paths == null) return;
+                foreach (var path in paths)
+                {
+                    foreach (var pt in path)
+                    {
+                        hasPoints = true;
+                        if (pt.x < minX) minX = pt.x;
+                        if (pt.y < minY) minY = pt.y;
+                        if (pt.x > maxX) maxX = pt.x;
+                        if (pt.y > maxY) maxY = pt.y;
+                    }
+                }
+            }
+
+            UpdateBounds(slice);
+            UpdateBounds(infill);
+            UpdateBounds(floor);
+            UpdateBounds(roof);
 
             if (!hasPoints) return Rect.Empty;
 
