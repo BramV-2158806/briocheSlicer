@@ -373,20 +373,5 @@ namespace briocheSlicer
                 SliceCanvas.Children.Add(tb);
             }
         }
-
-        /// <summary>
-        /// Temporary demo edges (20x20 square) so you can see the 2D panel working immediately.
-        /// Replace with your real triangle-plane intersections.
-        /// </summary>
-        private static List<BriocheEdge> BuildDemoEdges(double z)
-        {
-            return new List<BriocheEdge>
-            {
-                new(new Point3D(0,0,z),   new Point3D(20,0,z)),
-                new(new Point3D(20,0,z),  new Point3D(20,20,z)),
-                new(new Point3D(20,20,z), new Point3D(0,20,z)),
-                new(new Point3D(0,20,z),  new Point3D(0,0,z)),
-            };
-        }
     }
 }

@@ -22,6 +22,11 @@ namespace briocheSlicer.Slicing
         private PathsD? floor;
         private PathsD? roof;
 
+        // Region so we can calculate the difference 
+        // when generating infill.
+        private PathsD? floorRegion;
+        private PathsD? roofRegion;
+
         private List<PathsD> shells;
 
         private bool checkedRoof = false;
@@ -160,10 +165,11 @@ namespace briocheSlicer.Slicing
         {
             double delta = -settings.NozzleDiameter;
 
-            // Already inflate once so we dont print the innner shell 2 times
-            var currentPath = Clipper.InflatePaths(perimiter, delta, JoinType.Round, EndType.Polygon);
-
             var solid = new PathsD();
+
+            // Already inflate once so we dont print the innner shell 2 
+            var currentPath = Clipper.InflatePaths(perimiter, delta, JoinType.Round, EndType.Polygon);
+            solid.AddRange(currentPath);
             while (true)
             {
                 currentPath = Clipper.InflatePaths(currentPath, delta, JoinType.Round, EndType.Polygon);
@@ -208,8 +214,8 @@ namespace briocheSlicer.Slicing
             if (isBaseLayer)
             {
                 // For the base layer, we fill the entire area
+                this.floorRegion = currentPerim;
                 this.floor = Generate_Solid(currentPerim);
-
                 return this.floor;
             }
 
@@ -217,6 +223,7 @@ namespace briocheSlicer.Slicing
 
             // Solid_i - intersect(solid_i-1 ... solid_i-n)
             var floor = Clipper.Difference(currentPerim, intersectedLower, FillRule.NonZero);
+            this.floorRegion = floor;
 
             // Fill in the floor
             this.floor = Generate_Solid(floor);
@@ -241,6 +248,7 @@ namespace briocheSlicer.Slicing
             if (isTopLayer)
             {
                 // For the top layer, we fill the entire area
+                this.roofRegion = currentPerim;
                 this.roof = Generate_Solid(currentPerim);
                 return this.roof;
             }
@@ -248,6 +256,7 @@ namespace briocheSlicer.Slicing
 
             // Solid_i - intersect(solid_i-1 ... solid_i-n)
             var roof = Clipper.Difference(currentPerim, intersectedUpper, FillRule.NonZero);
+            this.roofRegion = roof;
 
             // Fill in the roof
             this.roof = Generate_Solid(roof);
@@ -297,11 +306,15 @@ namespace briocheSlicer.Slicing
             double shrink = (settings.NozzleDiameter / 2.0) - infillOverlap;
             PathsD infillRegion = Clipper.InflatePaths(innerMost, -shrink, JoinType.Round, EndType.Polygon);
 
-            // Exclude roof/floor solids if they exist We dont want to infill those again.
-            if (floor != null && floor.Count > 0)
-                infillRegion = Clipper.Difference(infillRegion, floor, FillRule.NonZero);
-            if (roof != null && roof.Count > 0)
-                infillRegion = Clipper.Difference(infillRegion, roof, FillRule.NonZero);
+            // Exclude roof/floor regions if they exist
+            // The filled floors are a set of concentric (sluitende)
+            // regions. The calculate the difference it needs to find a
+            // concentric region. When using the filled floors because all the
+            // filling is also concetric it takes the smal hole inside the filling as the region.
+            if (floorRegion != null && floorRegion.Count > 0)
+                infillRegion = Clipper.Difference(infillRegion, floorRegion, FillRule.NonZero);
+            if (roofRegion != null && roofRegion.Count > 0)
+                infillRegion = Clipper.Difference(infillRegion, roofRegion, FillRule.NonZero);
 
             // Create the infill bounding box that minimally cover the infill region
             var spacing = settings.NozzleDiameter * 1.5;

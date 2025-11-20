@@ -129,9 +129,8 @@ namespace briocheSlicer.Slicing
                     var followingNLayers = GetFollowingLayers(i, settings.NumberRoofs);
                     var perimiters = followingNLayers.Select(l => l.GetInnerShell()).ToList();
                     slice.Generate_Roof(perimiters);
-
-                    slice.Generate_Infill();
                 }
+                slice.Generate_Infill();
             }
         }
     }
