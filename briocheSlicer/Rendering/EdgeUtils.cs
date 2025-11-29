@@ -55,29 +55,25 @@ namespace briocheSlicer.Slicing
                     var A = iAtStart ? ei.End : ei.Start; // edge i points into V
                     var B = jAtStart ? ej.End : ej.Start; // edge j points out of V
 
-                    // vectors AV and VB (same straight line means cross ~ 0 and dot negative/positive appropriate)
                     var v1 = new Vector3D(V.X - A.X, V.Y - A.Y, 0);
                     var v2 = new Vector3D(B.X - V.X, B.Y - V.Y, 0);
 
-                    // collinear check: cross z ~ 0
                     double cross = v1.X * v2.Y - v1.Y * v2.X;
                     if (Math.Abs(cross) > eps) continue;
 
                     // they must be aligned (not turning back and forth):
-                    if (v1.X * v2.X + v1.Y * v2.Y < -eps) continue; // opposite directions (would form a straight but backward)
+                    if (v1.X * v2.X + v1.Y * v2.Y < -eps) continue;
 
                     // OK: merge A -> B
                     var merged = new BriocheEdge(A, B);
 
-                    // replace the two edges with the merged one
-                    // mark higher index first to remove cleanly
                     int a = Math.Max(iIdx, jIdx), b = Math.Min(iIdx, jIdx);
                     list.RemoveAt(a);
                     list.RemoveAt(b);
                     list.Add(merged);
 
                     changed = true;
-                    break; // restart adjacency after mutation
+                    break;
                 }
 
             } while (changed);

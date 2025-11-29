@@ -352,12 +352,13 @@ namespace briocheSlicer
             var infill = currentSlice.GetInfill();
             var roof = currentSlice.GetRoof();
             var floor = currentSlice.GetFloor();
+            var support = currentSlice.GetSupport();
 
             // Draw the 2D slice
             if (slice != null && slice.Count > 0)
             {
                 // Show slice paths and infill
-                SliceRenderer.DrawSliceAutoFit(SliceCanvas, slice, infill, floor, roof);
+                SliceRenderer.DrawSliceAutoFit(SliceCanvas, slice, infill, floor, roof, support);
             }
             else
             {

@@ -13,6 +13,8 @@ namespace briocheSlicer.Slicing
         private List<BriocheSlice> layers;
         private GcodeSettings settings;
         public readonly int amount_Layers;
+        public readonly double offset_x;
+        public readonly double offset_y;
 
         /// <summary>
         /// 
@@ -22,11 +24,13 @@ namespace briocheSlicer.Slicing
         /// So slice[0] is the bottom slice and slice[count] is the top slice.
         /// </param>
         /// <param name="settings"></param>
-        public BriocheModel(List<BriocheSlice> newSlices, GcodeSettings settings)
+        public BriocheModel(List<BriocheSlice> newSlices, GcodeSettings settings, double offset_x, double offset_y)
         {
             this.layers = newSlices;
             this.amount_Layers = layers.Count;
             this.settings = settings;
+            this.offset_x = offset_x;
+            this.offset_y = offset_y;
 
             Upwards_Pass();
             Downwards_Pass();
@@ -130,7 +134,20 @@ namespace briocheSlicer.Slicing
                     var perimiters = followingNLayers.Select(l => l.GetInnerShell()).ToList();
                     slice.Generate_Roof(perimiters);
                 }
+
                 slice.Generate_Infill();
+
+                if (i == this.amount_Layers - 1)
+                {
+                    slice.Generate_Support(new PathsD(), true);
+                } else
+                {
+                    var nextLayer = GetFollowingLayers(i, 1);
+                    var outerPerimeter = nextLayer[0].GetOuterLayer()!;
+                    var support = nextLayer[0].GetSupportRegion()!;
+                    var union = Clipper.Union(outerPerimeter, support, FillRule.EvenOdd);
+                    slice.Generate_Support(union);
+                }
             }
         }
     }

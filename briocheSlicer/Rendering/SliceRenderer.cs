@@ -17,16 +17,18 @@ namespace briocheSlicer.Rendering
             (
             Canvas canvas, PathsD? slice, PathsD? infill = null,
             PathsD? floor = null, PathsD? roof = null,
-            double strokePx = 1.5, double marginPercent = 0.06
+            PathsD? support = null, double strokePx = 1.5, double marginPercent = 0.06
             )
         {
             canvas.Children.Clear();
+            Console.WriteLine($"Support path count: {support?.Count ?? 0}");
             if ((slice == null || slice.Count == 0) && 
         (infill == null || infill.Count == 0) && 
         (floor == null || floor.Count == 0) && 
-        (roof == null || roof.Count == 0)) return;
+        (roof == null || roof.Count == 0) &&
+        (support == null || support.Count == 0)) return;
 
-            var bounds = ComputeBoundsFromPathsD(slice, infill, floor, roof);
+            var bounds = ComputeBoundsFromPathsD(slice, infill, floor, roof, support);
 
             DrawUsingTransform(canvas, strokePx, marginPercent, bounds, draw =>
             {
@@ -163,6 +165,67 @@ namespace briocheSlicer.Rendering
                         }
                     }
                 }
+                // --- Draw support region ---
+                if (support != null && support.Count > 0)
+                {
+                    var supportStroke = new SolidColorBrush(Color.FromRgb(90, 160, 255)); // soft blue
+                    supportStroke.Freeze();
+
+                    foreach (var path in support)
+                    {
+                        if (path == null || path.Count < 2) continue;
+
+                        bool isClosed = (path[0].x == path[path.Count - 1].x &&
+                                         path[0].y == path[path.Count - 1].y);
+
+                        if (isClosed)
+                        {
+                            // polygon outline (support roof/platform)
+                            var fig = new PathFigure
+                            {
+                                IsClosed = true,
+                                IsFilled = false,
+                                StartPoint = draw(new Point3D(path[0].x, path[0].y, 0))
+                            };
+                            var seg = new PolyLineSegment();
+                            for (int i = 1; i < path.Count; i++)
+                                seg.Points.Add(draw(new Point3D(path[i].x, path[i].y, 0)));
+
+                            fig.Segments.Add(seg);
+
+                            var geo = new PathGeometry();
+                            geo.Figures.Add(fig);
+
+                            canvas.Children.Add(new Path
+                            {
+                                Data = geo,
+                                Stroke = supportStroke,
+                                StrokeThickness = strokePx,
+                                StrokeLineJoin = PenLineJoin.Round
+                            });
+                        }
+                        else
+                        {
+                            // support pillars (open lines)
+                            for (int i = 0; i < path.Count - 1; i++)
+                            {
+                                var p1 = draw(new Point3D(path[i].x, path[i].y, 0));
+                                var p2 = draw(new Point3D(path[i + 1].x, path[i + 1].y, 0));
+
+                                canvas.Children.Add(new Line
+                                {
+                                    X1 = p1.X,
+                                    Y1 = p1.Y,
+                                    X2 = p2.X,
+                                    Y2 = p2.Y,
+                                    Stroke = supportStroke,
+                                    StrokeThickness = strokePx * 0.8,
+                                });
+                            }
+                        }
+                    }
+                }
+
             });
         }
 
@@ -312,13 +375,14 @@ namespace briocheSlicer.Rendering
         }
 
         // Add this overload to handle 4 arguments for ComputeBoundsFromPathsD
-        private static Rect ComputeBoundsFromPathsD(PathsD? slice, PathsD? infill, PathsD? floor, PathsD? roof)
+        private static Rect ComputeBoundsFromPathsD(
+    PathsD? slice, PathsD? infill, PathsD? floor, PathsD? roof, PathsD? support)
         {
             double minX = double.PositiveInfinity, minY = double.PositiveInfinity;
             double maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
             bool hasPoints = false;
 
-            void UpdateBounds(PathsD? paths)
+            void Update(PathsD? paths)
             {
                 if (paths == null) return;
                 foreach (var path in paths)
@@ -334,16 +398,18 @@ namespace briocheSlicer.Rendering
                 }
             }
 
-            UpdateBounds(slice);
-            UpdateBounds(infill);
-            UpdateBounds(floor);
-            UpdateBounds(roof);
+            Update(slice);
+            Update(infill);
+            Update(floor);
+            Update(roof);
+            Update(support);
 
             if (!hasPoints) return Rect.Empty;
 
-            double w = Math.Max(1e-9, maxX - minX);
-            double h = Math.Max(1e-9, maxY - minY);
-            return new Rect(minX, minY, w, h);
+            return new Rect(minX, minY,
+                            Math.Max(1e-9, maxX - minX),
+                            Math.Max(1e-9, maxY - minY));
         }
+
     }
 }
