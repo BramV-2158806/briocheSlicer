@@ -22,6 +22,9 @@ namespace briocheSlicer.Gcode
         public int NumberFloors { get; set; }
         public int NumberRoofs { get; set; } 
 
+        public double InfillSparsity { get; set; }
+        public double SupportSparsity { get; set; }
+
         public GcodeSettings(
             double nozzleDiameter = 0.4,
             double layerHeight = 0.2,
@@ -32,7 +35,9 @@ namespace briocheSlicer.Gcode
             double filamentSurfaceArea = 2.405,
             int numberShells = 1,
             int numberFloors = 2,
-            int numberRoofs = 2)
+            int numberRoofs = 2,
+            double infillSparsity = 5,
+            double supportSparsity = 5)
         {
             NozzleDiameter = nozzleDiameter;
             LayerHeight = layerHeight;
@@ -44,6 +49,8 @@ namespace briocheSlicer.Gcode
             NumberShells = numberShells;
             NumberFloors = numberFloors;
             NumberRoofs = numberRoofs;
+            InfillSparsity = infillSparsity * nozzleDiameter;
+            SupportSparsity = supportSparsity * nozzleDiameter;
         }
     }
 }

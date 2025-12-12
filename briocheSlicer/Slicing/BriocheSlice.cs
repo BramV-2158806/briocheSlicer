@@ -78,6 +78,8 @@ namespace briocheSlicer.Slicing
             return support;
         }
 
+        public void SetSupport(PathsD sup) { support = sup; }
+
         public PathsD? GetSupportRegion()
         {
             return supportRegion;
@@ -150,8 +152,6 @@ namespace briocheSlicer.Slicing
         private List<PathsD> Generate_Shells(PathsD cleanSlice, GcodeSettings settings)
         {
             var shells = new List<PathsD>();
-
-            var perimter_overlap = 0.10 * settings.NozzleDiameter;
 
             // Add the outer perimeter (first shell - index 0)
             PathsD currentShell = cleanSlice;
@@ -276,7 +276,7 @@ namespace briocheSlicer.Slicing
             return roof;
         }
 
-        public PathsD Generate_Support(PathsD perimeterAndSupportUpper, bool isTopLayer = false)
+        public PathsD Generate_Support(PathsD perimeterAndSupportUpper, int layerIndex,bool isTopLayer = false)
         {
             // Check that phase 1 was completed
             if (this.outerLayer == null || this.shells == null || GetInnerShell() == null)
@@ -293,12 +293,13 @@ namespace briocheSlicer.Slicing
                 return new PathsD();
             }
 
-            var currentPerim = GetOuterShell();
+            var outershell = GetOuterShell();
             double selfSupportDelta = Math.Min(settings.NozzleDiameter / 2.0, settings.LayerHeight);
-            var selfSupportingArea = Clipper.InflatePaths(currentPerim, selfSupportDelta, JoinType.Round, EndType.Polygon);
+            var selfSupportingArea = Clipper.InflatePaths(outershell, selfSupportDelta, JoinType.Round, EndType.Polygon);
 
             this.supportRegion = Clipper.Difference(perimeterAndSupportUpper, selfSupportingArea, FillRule.NonZero);
-            this.support = GenerateBoundedPattern(this.supportRegion, InfillPattern.Cross);
+            //this.supportRegion = Clipper.InflatePaths(this.supportRegion, -0.01, JoinType.Round, EndType.Polygon);
+            this.support = GenerateBoundedPattern(this.supportRegion, InfillPattern.Cross, layerIndex);
             return this.support;
 
         }
@@ -353,10 +354,18 @@ namespace briocheSlicer.Slicing
 
         public enum InfillPattern { Horizontal, Cross}
 
-        private PathsD GenerateBoundedPattern(PathsD infillRegion, InfillPattern pattern)
+        private PathsD GenerateBoundedPattern(PathsD infillRegion, InfillPattern pattern, int layerIndex = -1)
         {
             // Create the infill bounding box that minimally cover the infill region
-            var spacing = settings.NozzleDiameter * 5;
+            var spacing = settings.NozzleDiameter;
+            if (layerIndex == -1)
+            {
+                spacing = settings.InfillSparsity;
+            }
+            else
+            {
+                spacing = settings.SupportSparsity;
+            }
             var bounds = Clipper.GetBounds(infillRegion);
             double minx = bounds.left;
             double maxx = bounds.right;
@@ -383,24 +392,23 @@ namespace briocheSlicer.Slicing
                 PointD center = new PointD((minx + maxx) / 2.0, (miny + maxy) / 2.0);
 
                 // 1. Create horizontal lines (unrotated before clipping)
-                PathsD tempLines = new PathsD();
-                for (double y = miny; y <= maxy; y += spacing)
+                if (layerIndex != -1)
                 {
-                    var p0 = new PointD(minx, y);
-                    var p1 = new PointD(maxx, y);
-                    grid.Add(new PathD { p0, p1 });
+                    if (layerIndex % 2 == 0)
+                    {
+                        grid = addHorizontalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
+                    }
+                    else
+                    {
+                        grid = addVerticalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
+                    }
                 }
-
-                // 2. Create vertical lines
-                for (double x = minx; x <= maxx; x += spacing)
+                else
                 {
-                    var p0 = new PointD(x, miny);
-                    var p1 = new PointD(x, maxy);
-                    grid.Add(new PathD { p0, p1 });
+                    grid = addHorizontalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
+                    grid = addVerticalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
                 }
-
             }
-
 
             // Clip the infill lines to the infill region
             var clipper = new ClipperD();
@@ -414,6 +422,30 @@ namespace briocheSlicer.Slicing
             // Remove degenerate lines and points and return the infill
             var boundedPattern = Clipper.SimplifyPaths(insideOpen, 1e-9, isClosedPath: false);
             return boundedPattern;
+        }
+
+
+        private PathsD addHorizontalLinesToGrid(PathsD grid, double minx, double maxx, double miny, double maxy, double spacing, int layerIndex)
+        {
+            for (double y = miny; y <= maxy; y += spacing)
+            {
+                var p0 = new PointD(minx, y);
+                var p1 = new PointD(maxx, y);
+                grid.Add(new PathD { p0, p1 });
+            }
+            return grid;
+        }
+
+        private PathsD addVerticalLinesToGrid(PathsD grid, double minx, double maxx, double miny, double maxy, double spacing, int layerIndex)
+        {
+            // 2. Create vertical lines
+            for (double x = minx; x <= maxx; x += spacing)
+            {
+                var p0 = new PointD(x, miny);
+                var p1 = new PointD(x, maxy);
+                grid.Add(new PathD { p0, p1 });
+            }
+            return grid;
         }
 
         /// <summary>
@@ -439,7 +471,7 @@ namespace briocheSlicer.Slicing
                 infillRegion = Clipper.Difference(infillRegion, roofRegion, FillRule.NonZero);
 
             // Remove degenerate lines and points and return the infill
-            this.infill = GenerateBoundedPattern(infillRegion, InfillPattern.Cross);
+            this.infill = GenerateBoundedPattern(infillRegion, InfillPattern.Cross, -1);
             return this.infill;
         }
 
@@ -457,9 +489,11 @@ namespace briocheSlicer.Slicing
                 foreach (var edge in polygon)
                 {
                     path.Add(new PointD(edge.Start.X, edge.Start.Y));
+
                 }
                 rawSlice.Add(path);
             }
+            Clipper.SimplifyPaths(rawSlice, 1e-9, isClosedPath: true);
             return rawSlice;
         }
 

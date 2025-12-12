@@ -140,14 +140,15 @@ namespace briocheSlicer.Slicing
 
                 if (i == this.amount_Layers - 1)
                 {
-                    slice.Generate_Support(new PathsD(), true);
+                    slice.Generate_Support(new PathsD(), i, true);
                 } else
                 {
                     var nextLayer = GetFollowingLayers(i, 1);
-                    var outerPerimeter = nextLayer[0].GetOuterLayer()!;
+                    var outerPerimeter = nextLayer[0].GetOuterShell()!;
                     var support = nextLayer[0].GetSupportRegion()!;
                     var union = Clipper.Union(outerPerimeter, support, FillRule.EvenOdd);
-                    slice.Generate_Support(union);
+                    slice.Generate_Support(union, i);
+                    //slice.SetSupport(Clipper.InflatePaths(outerPerimeter, 2, JoinType.Round, EndType.Polygon));
                 }
             }
         }
