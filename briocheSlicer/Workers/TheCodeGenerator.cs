@@ -15,7 +15,7 @@ namespace briocheSlicer.Workers
     internal class TheCodeGenerator
     {
         double currentExtrusion = 0.0;
-        private bool firstSupport = false;
+        private bool lastSupport = false;
 
         public TheCodeGenerator() {}
 
@@ -181,15 +181,14 @@ namespace briocheSlicer.Workers
             PathsD? supportPaths = slice.GetSupport();
             if (supportPaths == null || supportPaths.Count == 0) return;
 
-            if (!this.firstSupport)
-            {
-                gcode.AppendLine("; First Support Layer Dropped! ");
-                this.firstSupport = true;
-                return;
-            }
-
             BriocheSlice? nextSlice = model.GetSlice(layerIndex + 1);
             PathsD? nextSupport = nextSlice?.GetSupport();
+
+            if (nextSupport == null || nextSupport.Count == 0)
+            {
+                gcode.AppendLine("; Last Support Layer Dropped! ");
+                return;
+            }
 
             // Process each infill line (these are open paths)
             foreach (var path in supportPaths)
