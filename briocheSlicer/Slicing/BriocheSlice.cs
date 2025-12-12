@@ -151,6 +151,8 @@ namespace briocheSlicer.Slicing
         {
             var shells = new List<PathsD>();
 
+            var perimter_overlap = 0.10 * settings.NozzleDiameter;
+
             // Add the outer perimeter (first shell - index 0)
             PathsD currentShell = cleanSlice;
             shells.Add(currentShell); 
@@ -437,7 +439,7 @@ namespace briocheSlicer.Slicing
                 infillRegion = Clipper.Difference(infillRegion, roofRegion, FillRule.NonZero);
 
             // Remove degenerate lines and points and return the infill
-            this.infill = GenerateBoundedPattern(infillRegion, InfillPattern.Horizontal);
+            this.infill = GenerateBoundedPattern(infillRegion, InfillPattern.Cross);
             return this.infill;
         }
 

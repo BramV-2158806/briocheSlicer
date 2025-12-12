@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Clipper2Lib;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace briocheSlicer.Slicing
 {

@@ -281,10 +281,13 @@ namespace briocheSlicer.Rendering
             double sy = (H - 2 * pad) / bounds.Height;
             double s = Math.Max(1e-9, Math.Min(sx, sy));
 
+            // Map model-space Point3D -> canvas Point, flipped horizontally to match viewer
             Point Xf(Point3D p)
             {
-                double x = pad + s * (p.X - bounds.X);
-                double y = H - pad - s * (p.Y - bounds.Y); // flip Y up
+                // Flip X by mapping from bounds.Right down to bounds.Left
+                double x = pad + s * (bounds.Right - p.X);
+                // Keep Y flipped so that model Y up maps to canvas upward
+                double y = H - pad - s * (p.Y - bounds.Y);
                 return new Point(x, y);
             }
 
