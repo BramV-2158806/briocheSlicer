@@ -210,6 +210,10 @@ namespace briocheSlicer.Workers
                 var firstPoint = path[0];
                 gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x + model.offset_x:F3} Y{firstPoint.y + model.offset_y:F3}"));
 
+                // Start hop
+                gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{slice.slice_height + 0.2}"));
+
+
                 // Extrude along the infill line
                 for (int i = 1; i < path.Count; i++)
                 {
@@ -217,8 +221,15 @@ namespace briocheSlicer.Workers
                     var previousPoint = path[i - 1];
                     double extrusion = currentExtrusion + CalculateExtrusion(previousPoint, currentPoint, settings);
 
+                    // Stop hop
+                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{slice.slice_height}"));
+
+                    // Print line
                     gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x + model.offset_x:F3} Y{currentPoint.y + model.offset_y:F3} E{extrusion:F5}"));
                     currentExtrusion = extrusion;
+
+                    // Start hop
+                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{slice.slice_height + 0.2}"));
                 }
 
             }

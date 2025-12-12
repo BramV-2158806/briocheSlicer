@@ -13,7 +13,7 @@ namespace briocheSlicer.Slicing
     internal class BriocheSlice
     {
         private const double EPSILON = 1e-6;
-        private readonly double slice_height;
+        public readonly double slice_height;
 
         // The paths to be printed.
         // This is the meat of our brioche slice.

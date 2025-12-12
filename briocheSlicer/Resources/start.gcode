@@ -597,6 +597,8 @@ G21
 M82 ; use relative distances for extrusion
 M981 S1 P20000 ;open spaghetti detector
 
-G1 E5
+G1 E10
+
+G92 E0
 
 ;===== start G-code model =====================
