@@ -4,105 +4,176 @@
         xmlns:Helix="clr-namespace:HelixToolkit.Wpf;assembly=HelixToolkit.Wpf"
         Title="Brioche-slicer" Height="900" Width="1600">
     <DockPanel>
-        <ToolBar DockPanel.Dock="Top">
-            <Button Content="Open STL..." Click="OpenStl_Click" />
-            <Separator/>
-
-            <!-- Layer Height Input -->
-            <TextBlock Text="Layer Height (mm):" VerticalAlignment="Center" Margin="5,0"/>
-            <TextBox x:Name="LayerHeightTextBox" 
-                Width="60" 
-                Text="0,2" 
-                VerticalContentAlignment="Center"
-                ToolTip="Layer height in millimeters"/>
-            <Separator/>
-            
-            <!-- Nozzle Diameter Input -->
-            <TextBlock Text="Nozzle Diameter (mm):" VerticalAlignment="Center" Margin="5,0"/>
-            <TextBox x:Name="NozzleDiameterTextBox" 
-                Width="60" 
-                Text="0,4" 
-                VerticalContentAlignment="Center"
-                ToolTip="Nozzle diameter in millimeters"/>
-            <Separator/>
-
-            <!-- Number of Shells Input -->
-            <TextBlock Text="Shells:" VerticalAlignment="Center" Margin="5,0"/>
-            <TextBox x:Name="ShellsTextBox" 
-                Width="40" 
-                Text="3" 
-                VerticalContentAlignment="Center"
-                PreviewTextInput="ShellsTextBox_PreviewTextInput"
-                TextChanged="ShellsTextBox_TextChanged"
-                ToolTip="Number of perimeter shells (minimum 1)"/>
-            <Separator/>
-
-            <!-- Slice Button -->
-            <Button Content="Slice" 
+        <!-- Main Toolbar -->
+        <ToolBar DockPanel.Dock="Top" Height="50" Background="#F5F5F5" Padding="5">
+            <Button Content="📁 Open STL..." 
+                Click="OpenStl_Click"
+                Padding="8,5"
+                FontSize="12"
+                ToolTip="Load an STL file"/>
+            <Separator Width="1" Background="#CCCCCC"/>
+            <Button Content="🔪 Slice" 
                 Click="Slice_Click" 
                 x:Name="SliceButton"
                 IsEnabled="False"
-                Padding="10,3"
+                Padding="8,5"
+                FontSize="12"
                 ToolTip="Slice the model with current settings"/>
-            <Separator/>
-
-            <!-- Print Button -->
-            <Button Content="Print" 
+            <Button Content="🖨️ Print" 
                 Click="Print_Click" 
                 x:Name="PrintButton"
                 IsEnabled="False"
-                Padding="10,3"
-                ToolTip="Send G-code to printer"/>
-
+                Padding="8,5"
+                FontSize="12"
+                ToolTip="Generate G-code and save to Downloads"/>
         </ToolBar>
 
-        <!-- Slider panel on the right -->
-        <Border DockPanel.Dock="Right" Width="80" Background="#F0F0F0" Padding="10">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- Right Side Panel: Settings and Slice Height -->
+        <Border DockPanel.Dock="Right" Width="280" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10">
+                <StackPanel>
+                    <!-- Print Settings Section -->
+                    <GroupBox Header="Print Settings" Padding="10" Margin="0,0,0,10" 
+                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <!-- Layer Height -->
+                            <TextBlock Text="Layer Height (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="LayerHeightTextBox"
+                                     Text="0,2"
+                                     Padding="5,3"
+                                     Margin="0,0,0,8"
+                                     ToolTip="Layer height in millimeters"
+                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
 
-                <TextBlock Grid.Row="0" Text="Slice Height" 
-                   HorizontalAlignment="Center" 
-                   FontWeight="Bold" Margin="0,0,0,10"/>
+                            <!-- Nozzle Diameter -->
+                            <TextBlock Text="Nozzle Diameter (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="NozzleDiameterTextBox"
+                                     Text="0,4"
+                                     Padding="5,3"
+                                     Margin="0,0,0,8"
+                                     ToolTip="Nozzle diameter in millimeters"
+                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
+                        </StackPanel>
+                    </GroupBox>
 
-                <Slider Grid.Row="1" 
-                x:Name="SliceHeightSlider"
-                Orientation="Vertical"
-                Minimum="0" 
-                Maximum="100"
-                Value="50"
-                TickFrequency="10"
-                IsSnapToTickEnabled="False"
-                TickPlacement="BottomRight"
-                ValueChanged="SliceHeightSlider_ValueChanged"
-                IsEnabled="False"/>
+                    <!-- Perimeter Section -->
+                    <GroupBox Header="Perimeter" Padding="10" Margin="0,0,0,10" 
+                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <!-- Number of Shells -->
+                            <TextBlock Text="Shells:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ShellsTextBox" 
+                                Text="3" 
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                PreviewTextInput="ShellsTextBox_PreviewTextInput"
+                                TextChanged="ShellsTextBox_TextChanged"
+                                ToolTip="Number of perimeter shells (minimum 1)"/>
+                        </StackPanel>
+                    </GroupBox>
 
-                <TextBlock Grid.Row="2" 
-                   x:Name="SliceHeightText"
-                   Text="--" 
-                   HorizontalAlignment="Center"
-                   Margin="0,10,0,0"/>
-            </Grid>
+                    <!-- Infill Section -->
+                    <GroupBox Header="Infill" Padding="10" Margin="0,0,0,10" 
+                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <!-- Number of Floors -->
+                            <TextBlock Text="Floors:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="FloorsTextBox" 
+                                Text="2" 
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                PreviewTextInput="FloorsTextBox_PreviewTextInput"
+                                TextChanged="FloorsTextBox_TextChanged"
+                                ToolTip="Number of floor layers (minimum 0)"/>
+                            
+                            <!-- Number of Roofs -->
+                            <TextBlock Text="Roofs:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="RoofsTextBox" 
+                                Text="2" 
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                PreviewTextInput="RoofsTextBox_PreviewTextInput"
+                                TextChanged="RoofsTextBox_TextChanged"
+                                ToolTip="Number of roof layers (minimum 0)"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Slice Height Section -->
+                    <GroupBox Header="Slice Preview" Padding="10" Margin="0,0,0,10" 
+                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="Height" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <Slider x:Name="SliceHeightSlider"
+                                Orientation="Vertical"
+                                Minimum="0" 
+                                Maximum="100"
+                                Value="50"
+                                TickFrequency="10"
+                                IsSnapToTickEnabled="False"
+                                TickPlacement="BottomRight"
+                                ValueChanged="SliceHeightSlider_ValueChanged"
+                                IsEnabled="False"
+                                Height="150"/>
+                            <TextBlock x:Name="SliceHeightText"
+                                Text="--" 
+                                HorizontalAlignment="Center"
+                                Margin="0,10,0,0"
+                                FontWeight="Bold"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Position Section -->
+                    <GroupBox Header="Build Plate Position" Padding="10" Margin="0,0,0,10" 
+                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <!-- X Position -->
+                            <TextBlock Text="X Offset (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="XOffsetTextBox" 
+                                Text="0" 
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                TextChanged="OffsetTextBox_TextChanged"
+                                ToolTip="X position offset on build plate"/>
+                            
+                            <!-- Y Position -->
+                            <TextBlock Text="Y Offset (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="YOffsetTextBox" 
+                                Text="0" 
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                TextChanged="OffsetTextBox_TextChanged"
+                                ToolTip="Y position offset on build plate"/>
+
+                            <!-- Center Button -->
+                            <Button Content="📍 Center on Plate" 
+                                Click="CenterOnPlate_Click"
+                                Padding="5,5"
+                                Margin="0,8,0,0"
+                                ToolTip="Center object on the build plate"/>
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
-        <!-- Center area: split into 2 columns: 3D (left) + 2D Slice View (right) -->
+        <!-- Center area: 3D View + 2D Slice View -->
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="0.5*" />
             </Grid.ColumnDefinitions>
 
-            <!--Helix scene view. Allow drag and drop and define event handler-->
-            <Helix:HelixViewport3D Grid.Column="0" ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
-                <Helix:SunLight/>
-                <ModelVisual3D x:Name="scene" />
-            </Helix:HelixViewport3D>
+            <!-- 3D Helix View -->
+            <Border Grid.Column="0" Background="#1E1E1E" Margin="8">
+                <Helix:HelixViewport3D ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
+                    <Helix:SunLight/>
+                    <ModelVisual3D x:Name="scene" />
+                </Helix:HelixViewport3D>
+            </Border>
 
-            <!-- 2D slice view -->
+            <!-- 2D Slice View -->
             <Border Grid.Column="1" Background="#0D0D0D" Margin="8" CornerRadius="8">
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <Canvas x:Name="SliceCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="200" MinWidth="200" Background="#111"/>

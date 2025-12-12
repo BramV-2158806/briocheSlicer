@@ -132,7 +132,6 @@ namespace briocheSlicer.Workers
                 if (triEdges == null) continue;
 
                 edges.AddRange(triEdges);
-                triEdges.Print();
             }
             return edges;
         }
@@ -174,10 +173,27 @@ namespace briocheSlicer.Workers
                 throw new InvalidOperationException("Layer height must be set before slicing the model.");
             }
 
+            double plate_center = 256 / 2;
+
             // Get the height bounds so we can calculate the layers.
             Rect3D modelBounds = pureModel.Bounds;
             double modelMinZ = modelBounds.Z;
             double modelMaxZ = modelBounds.Z + modelBounds.SizeZ;
+
+            double modelMinX = modelBounds.X;
+            double modelMaxX = modelBounds.X + modelBounds.SizeX;
+
+            double modelMinY = modelBounds.Y;
+            double modelMaxY = modelBounds.Y + modelBounds.SizeY;
+
+            double model_width = modelMaxX - modelMinX;
+            double model_height = modelMaxY - modelMinY;
+
+            double model_center_x = modelMinX + model_width / 2;
+            double model_center_y = modelMinY + model_height / 2;
+
+            double offset_x = plate_center - model_center_x;
+            double offset_y = plate_center - model_center_y;
 
             // callculate the amount of layers
             // We round up, because rounding down is not pratcical
@@ -198,7 +214,8 @@ namespace briocheSlicer.Workers
             }
 
             // Add all the slices to form the brioche model.
-            return new BriocheModel(slices, settings);
+            return new BriocheModel(slices, settings, offset_x, offset_y);
+
         }
     }
 }
