@@ -1,15 +1,16 @@
-﻿using System.Globalization;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Media3D;
-using briocheSlicer.Gcode;
+﻿using briocheSlicer.Gcode;
 using briocheSlicer.Rendering;
 using briocheSlicer.Slicing;
 using briocheSlicer.Workers;
 using HelixToolkit.Wpf;
 using Microsoft.Win32;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 
 namespace briocheSlicer
 {
@@ -517,29 +518,9 @@ namespace briocheSlicer
             RotateModel(new Vector3D(1, 0, 0), 90);
         }
 
-        /// <summary>
-        /// Rotates the model around a specified axis by the given angle.
-        /// </summary>
-        /// <param name="axis">The axis to rotate around</param>
-        /// <param name="angle">The angle in degrees</param>
-        private void RotateModel(Vector3D axis, double angle)
+        private void RotateModelGeometry(RotateTransform3D rotation)
         {
             if (pureModel == null) return;
-
-            // Get the center point of the model
-            Point3D center = new Point3D(
-                modelBounds.X + modelBounds.SizeX / 2,
-                modelBounds.Y + modelBounds.SizeY / 2,
-                modelBounds.Z + modelBounds.SizeZ / 2
-            );
-
-            // Create rotation transform
-            var rotation = new RotateTransform3D(
-                new AxisAngleRotation3D(axis, angle),
-                center
-            );
-
-            // Apply the transformation to the actual geometry vertices
             foreach (var child in pureModel.Children)
             {
                 if (child is GeometryModel3D geometryModel)
@@ -569,6 +550,28 @@ namespace briocheSlicer
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Rotates the model around a specified axis by the given angle.
+        /// </summary>
+        /// <param name="axis">The axis to rotate around</param>
+        /// <param name="angle">The angle in degrees</param>
+        private void RotateModel(Vector3D axis, double angle)
+        {
+            if (pureModel == null) return;
+
+            // Get the center point of the model
+            Point3D center = BuildPlate.CalculateBoundsCenter(modelBounds);
+
+            // Create rotation transform
+            var rotation = new RotateTransform3D(
+                new AxisAngleRotation3D(axis, angle),
+                center
+            );
+
+            // Apply the transformation to the actual geometry vertices
+            RotateModelGeometry(rotation);
 
             // Update the model bounds after rotation
             modelBounds = pureModel.Bounds;
@@ -583,10 +586,12 @@ namespace briocheSlicer
             if (slicer?.Get_Slicing_Plane() != null)
             {
                 var slicingPlane = slicer.Create_Slicing_plane(modelBounds);
+
                 // Replace the old slicing plane with the new one
                 var group = scene.Content as Model3DGroup;
                 if (group != null && group.Children.Count > 1)
                 {
+                    // We know that the last model in the group is the slicing plane
                     group.Children[group.Children.Count - 1] = slicingPlane;
                 }
             }

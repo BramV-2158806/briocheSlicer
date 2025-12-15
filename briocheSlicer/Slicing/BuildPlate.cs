@@ -25,7 +25,7 @@ namespace briocheSlicer.Slicing
             model = CreateModel();
         }
 
-        private Point3D CalculateBoundsCenter(Rect3D modelbounds)
+        public static Point3D CalculateBoundsCenter(Rect3D modelbounds)
         {
             return new Point3D(
                 modelbounds.X + modelbounds.SizeX / 2,
