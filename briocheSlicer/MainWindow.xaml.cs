@@ -518,6 +518,13 @@ namespace briocheSlicer
             RotateModel(new Vector3D(1, 0, 0), 90);
         }
 
+        /// <summary>
+        /// Rotates the actual puremodel geometry.
+        /// This results in a rotate object that will be sliced in the same way as it is
+        /// displayed on the build plate.
+        /// ** DISCLAIMER AI helped write this code.
+        /// </summary>
+        /// <param name="rotation">The rotation object to rotate the geometry by. Center and rotation.</param>
         private void RotateModelGeometry(RotateTransform3D rotation)
         {
             if (pureModel == null) return;
