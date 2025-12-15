@@ -97,6 +97,26 @@
                                 PreviewTextInput="RoofsTextBox_PreviewTextInput"
                                 TextChanged="RoofsTextBox_TextChanged"
                                 ToolTip="Number of roof layers (minimum 0)"/>
+                            
+                            <!-- Infill Sparsity -->
+                            <TextBlock Text="Infill Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="InfillSparsityTextBox"
+                                     Text="5"
+                                     Padding="5,3"
+                                     Margin="0,0,0,8"
+                                     ToolTip="Infill sparsity factor (multiplied by nozzle diameter)"
+                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
+                            
+                            <!-- Support Sparsity -->
+                            <TextBlock Text="Support Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="SupportSparsityTextBox"
+                                     Text="8"
+                                     Padding="5,3"
+                                     Margin="0,0,0,8"
+                                     ToolTip="Support sparsity factor (multiplied by nozzle diameter)"
+                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -123,61 +143,96 @@
                                 FontWeight="Bold"/>
                         </StackPanel>
                     </GroupBox>
-
-                    <!-- Position Section -->
-                    <GroupBox Header="Build Plate Position" Padding="10" Margin="0,0,0,10" 
-                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
-                        <StackPanel>
-                            <!-- X Position -->
-                            <TextBlock Text="X Offset (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="XOffsetTextBox" 
-                                Text="0" 
-                                Padding="5,3"
-                                Margin="0,0,0,8"
-                                TextChanged="OffsetTextBox_TextChanged"
-                                ToolTip="X position offset on build plate"/>
-                            
-                            <!-- Y Position -->
-                            <TextBlock Text="Y Offset (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="YOffsetTextBox" 
-                                Text="0" 
-                                Padding="5,3"
-                                Margin="0,0,0,8"
-                                TextChanged="OffsetTextBox_TextChanged"
-                                ToolTip="Y position offset on build plate"/>
-
-                            <!-- Center Button -->
-                            <Button Content="📍 Center on Plate" 
-                                Click="CenterOnPlate_Click"
-                                Padding="5,5"
-                                Margin="0,8,0,0"
-                                ToolTip="Center object on the build plate"/>
-                        </StackPanel>
-                    </GroupBox>
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
         <!-- Center area: 3D View + 2D Slice View -->
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="0.5*" />
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <!-- 3D Helix View -->
-            <Border Grid.Column="0" Background="#1E1E1E" Margin="8">
-                <Helix:HelixViewport3D ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
-                    <Helix:SunLight/>
-                    <ModelVisual3D x:Name="scene" />
-                </Helix:HelixViewport3D>
-            </Border>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="0.5*" />
+                </Grid.ColumnDefinitions>
 
-            <!-- 2D Slice View -->
-            <Border Grid.Column="1" Background="#0D0D0D" Margin="8" CornerRadius="8">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                    <Canvas x:Name="SliceCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="200" MinWidth="200" Background="#111"/>
-                </ScrollViewer>
+                <!-- 3D Helix View -->
+                <Border Grid.Column="0" Background="#1E1E1E" Margin="8">
+                    <Helix:HelixViewport3D ZoomExtentsWhenLoaded="True" x:Name="View" AllowDrop="True" Drop="View_Drop">
+                        <Helix:SunLight/>
+                        <ModelVisual3D x:Name="scene" />
+                    </Helix:HelixViewport3D>
+                </Border>
+
+                <!-- 2D Slice View -->
+                <Border Grid.Column="1" Background="#0D0D0D" Margin="8" CornerRadius="8">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <Canvas x:Name="SliceCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="200" MinWidth="200" Background="#111"/>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+
+            <!-- Rotation Controls -->
+            <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="10">
+                <GroupBox Header="Model Rotation" Padding="10" Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                    <Grid HorizontalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left/Right Rotation -->
+                        <StackPanel Grid.Column="0" Orientation="Vertical">
+                            <TextBlock Text="Left/Right (Y-axis)" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="◀ Left" 
+                                        Click="RotateLeft_Click" 
+                                        x:Name="RotateLeftButton"
+                                        IsEnabled="False"
+                                        Padding="10,5"
+                                        Margin="5"
+                                        Width="80"
+                                        ToolTip="Rotate model 90° left around Y-axis"/>
+                                <Button Content="Right ▶" 
+                                        Click="RotateRight_Click" 
+                                        x:Name="RotateRightButton"
+                                        IsEnabled="False"
+                                        Padding="10,5"
+                                        Margin="5"
+                                        Width="80"
+                                        ToolTip="Rotate model 90° right around Y-axis"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Front/Back Rotation -->
+                        <StackPanel Grid.Column="2" Orientation="Vertical">
+                            <TextBlock Text="Front/Back (X-axis)" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="▲ Front" 
+                                        Click="RotateFront_Click" 
+                                        x:Name="RotateFrontButton"
+                                        IsEnabled="False"
+                                        Padding="10,5"
+                                        Margin="5"
+                                        Width="80"
+                                        ToolTip="Rotate model 90° forward around X-axis"/>
+                                <Button Content="Back ▼" 
+                                        Click="RotateBack_Click" 
+                                        x:Name="RotateBackButton"
+                                        IsEnabled="False"
+                                        Padding="10,5"
+                                        Margin="5"
+                                        Width="80"
+                                        ToolTip="Rotate model 90° backward around X-axis"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
             </Border>
         </Grid>
 

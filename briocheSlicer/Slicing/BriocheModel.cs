@@ -18,7 +18,9 @@ namespace briocheSlicer.Slicing
         public readonly double offset_y;
 
         /// <summary>
-        /// 
+        ///  Constructor of the briocheSlice. The slices are already created, it modifies the slices by adding
+        ///  roofs, floors, support and infill.
+        ///  Before the slices are given to the briochemodel they just represent peremiters.
         /// </summary>
         /// <param name="newSlices">
         /// The list of slices. Ordered bottom upwards.
@@ -47,12 +49,12 @@ namespace briocheSlicer.Slicing
         }
 
         /// <summary>
-        /// This function is written by AI
+        /// ** This function is written by AI **
         /// </summary>
         /// <param name="currentIndex"></param>
         /// <param name="count"></param>
         /// <returns></returns>
-        private List<BriocheSlice> GetPreviousLayers(int currentIndex, int count)
+        private List<BriocheSlice> GetLayersBelow(int currentIndex, int count)
         {
             if (count <= 0 || currentIndex <= 0 || layers.Count == 0)
                 return new List<BriocheSlice>(0);
@@ -68,12 +70,12 @@ namespace briocheSlicer.Slicing
         }
 
         /// <summary>
-        /// This function is written by AI
+        /// ** This function is written by AI **
         /// </summary>
         /// <param name="currentIndex"></param>
         /// <param name="count"></param>
         /// <returns></returns>
-        private List<BriocheSlice> GetFollowingLayers(int currentIndex, int count)
+        private List<BriocheSlice> GetLayersAbove(int currentIndex, int count)
         {
 
             if (count <= 0 || layers.Count == 0 || currentIndex >= layers.Count - 1)
@@ -89,24 +91,26 @@ namespace briocheSlicer.Slicing
             return result;
         }
 
+        /// <summary>
+        /// Moves from the bottom layer to the top.
+        /// It generates floors.
+        /// This is the first pass over the model, after the initial stage.
+        /// </summary>
         private void Upwards_Pass()
         {
-            var n = settings.NumberFloors;
             for (int i = 0; i < this.amount_Layers; i++)
             {
                 var slice = this.layers[i];
 
-                if (i < n)
+                if (i < settings.NumberFloors)
                 {
-                    // process base layers
                     slice.Generate_Floor(new List<PathsD>(), true);
                 }
                 else
                 {
-                    // Example: build a list of the previous n layers (bottom-to-top order)
-                    var previousNLayers = GetPreviousLayers(i, n);
-                    var perimiters = previousNLayers.Select(l => l.GetInnerShell()).ToList();
-                    slice.Generate_Floor(perimiters);
+                    var prev_layers = GetLayersBelow(i, settings.NumberFloors);
+                    var prev_inner_perims = prev_layers.Select(l => l.GetInnerShell()).ToList();
+                    slice.Generate_Floor(prev_inner_perims!);
                 }
             }
         }
@@ -124,32 +128,29 @@ namespace briocheSlicer.Slicing
             {
                 var slice = this.layers[i];
 
+                // Process top layer
                 if (i >= this.amount_Layers - settings.NumberRoofs)
                 {
-                    // process top layers
                     slice.Generate_Roof(new List<PathsD>(), true);
+                    slice.Generate_Support(new PathsD(), i, true);
                 }
                 else
                 {
-                    var followingNLayers = GetFollowingLayers(i, settings.NumberRoofs);
-                    var perimiters = followingNLayers.Select(l => l.GetInnerShell()).ToList();
-                    slice.Generate_Roof(perimiters);
-                }
+                    // Handle roofs
+                    // For previous layers we have to cal the above function.
+                    // We are moving down so prev is up.
+                    var prev_layers = GetLayersAbove(i, settings.NumberRoofs);
+                    var prev_innerPerimiters = prev_layers.Select(l => l.GetInnerShell()).ToList();
+                    slice.Generate_Roof(prev_innerPerimiters!);
 
+                    // Handle support
+                    var prev_layer = GetLayersAbove(i, 1);
+                    var prev_outerPerimeter = prev_layer[0].GetOuterShell()!;
+                    var prev_support = prev_layer[0].GetSupportRegion()!;
+                    var prev_perim_support = Clipper.Union(prev_outerPerimeter, prev_support, FillRule.EvenOdd);
+                    slice.Generate_Support(prev_perim_support, i);
+                }
                 slice.Generate_Infill();
-
-                if (i == this.amount_Layers - 1)
-                {
-                    slice.Generate_Support(new PathsD(), i, true);
-                } else
-                {
-                    var nextLayer = GetFollowingLayers(i, 1);
-                    var outerPerimeter = nextLayer[0].GetOuterShell()!;
-                    var support = nextLayer[0].GetSupportRegion()!;
-                    var union = Clipper.Union(outerPerimeter, support, FillRule.EvenOdd);
-                    slice.Generate_Support(union, i);
-                    //slice.SetSupport(Clipper.InflatePaths(outerPerimeter, 2, JoinType.Round, EndType.Polygon));
-                }
             }
         }
     }

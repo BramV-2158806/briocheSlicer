@@ -1,26 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Media.Media3D;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using briocheSlicer.Gcode;
+﻿using briocheSlicer.Gcode;
 using briocheSlicer.Rendering;
 using briocheSlicer.Slicing;
 using briocheSlicer.Workers;
 using HelixToolkit.Wpf;
 using Microsoft.Win32;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 
 namespace briocheSlicer
 {
@@ -38,8 +28,8 @@ namespace briocheSlicer
         private BriocheModel? briocheModel;
 
         private GcodeSettings gcodeSettings;
-        private double currentOffsetX = 0;
-        private double currentOffsetY = 0;
+
+        private BuildPlate? buildPlate;
 
         public MainWindow()
         {
@@ -99,7 +89,7 @@ namespace briocheSlicer
             {
                 try
                 {
-                    Model3DGroup group = Show_Model_And_Slice_Plane(dlg.FileName);
+                    Model3DGroup group = ModelView(dlg.FileName);
 
                     SliceHeightSlider.IsEnabled = true;
                     UpdateSliceHeightText(SliceHeightSlider.Value);
@@ -129,7 +119,7 @@ namespace briocheSlicer
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length > 0 && files[0].EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
                 {
-                    Model3DGroup group = Show_Model_And_Slice_Plane(files[0]);
+                    Model3DGroup group = ModelView(files[0]);
 
                     SliceHeightSlider.IsEnabled = true;
                     UpdateSliceHeightText(SliceHeightSlider.Value);
@@ -147,10 +137,21 @@ namespace briocheSlicer
         /// The group of models, 
         /// now containting the model itself and a slicing plane
         /// </returns>
-        private Model3DGroup Show_Model_And_Slice_Plane(string filename)
+        private Model3DGroup ModelView(string filename)
         {
             // Load the model and add it to the scene.
             Model3DGroup group = Add_Model_To_Scene(filename);
+
+            // Create or update the buildplate
+            if (buildPlate == null)
+            {
+                buildPlate = new BuildPlate(group.Bounds, 256);
+            }
+            else
+            {
+                buildPlate.UpdatePosition(group.Bounds);
+            }
+            group.Children.Add(buildPlate.GetModel());
 
             // Create the slicing plane and att it to the scene.
             GeometryModel3D slicingPlane = slicer.Create_Slicing_plane(group.Bounds);
@@ -184,13 +185,13 @@ namespace briocheSlicer
             // Save modelbounnds for slicing plane max and min y
             modelBounds = group.Bounds;
 
-            // Reset offsets when loading new model
-            currentOffsetX = 0;
-            currentOffsetY = 0;
-            XOffsetTextBox.Text = "0";
-            YOffsetTextBox.Text = "0";
-
             UpdateSliceHeightText(SliceHeightSlider.Value);
+
+            // Enable rotation buttons
+            RotateLeftButton.IsEnabled = true;
+            RotateRightButton.IsEnabled = true;
+            RotateFrontButton.IsEnabled = true;
+            RotateBackButton.IsEnabled = true;
 
             return group;
         }
@@ -349,55 +350,6 @@ namespace briocheSlicer
         }
 
         /// <summary>
-        /// Validates offset inputs and updates current offsets.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void OffsetTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (sender is TextBox textBox)
-            {
-                if (double.TryParse(textBox.Text, out double offset))
-                {
-                    textBox.Background = Brushes.White;
-
-                    if (textBox == XOffsetTextBox)
-                        currentOffsetX = offset;
-                    else if (textBox == YOffsetTextBox)
-                        currentOffsetY = offset;
-                }
-                else
-                {
-                    textBox.Background = Brushes.LightPink;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Centers the object on the build plate.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void CenterOnPlate_Click(object sender, RoutedEventArgs e)
-        {
-            if (modelBounds.IsEmpty)
-            {
-                MessageBox.Show("No model loaded. Please load an STL file first.",
-                                "No Model", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // Calculate center offsets
-            // Assuming build plate center is at (0, 0)
-            currentOffsetX = -modelBounds.X - (modelBounds.SizeX / 2);
-            currentOffsetY = -modelBounds.Y - (modelBounds.SizeY / 2);
-
-            // Update UI
-            XOffsetTextBox.Text = currentOffsetX.ToString("F2");
-            YOffsetTextBox.Text = currentOffsetY.ToString("F2");
-        }
-
-        /// <summary>
         /// Handles the Slice button click event.
         /// Validates inputs and initiates the slicing process.
         /// </summary>
@@ -450,6 +402,24 @@ namespace briocheSlicer
                 return;
             }
 
+            // Validate infill sparsity input
+            string infillSparsityText = Normalize(InfillSparsityTextBox.Text);
+            if (!double.TryParse(infillSparsityText, NumberStyles.Float, CultureInfo.InvariantCulture, out double infillSparsity) || infillSparsity <= 0)
+            {
+                MessageBox.Show("Please enter a valid infill sparsity (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Validate support sparsity input
+            string supportSparsityText = Normalize(SupportSparsityTextBox.Text);
+            if (!double.TryParse(supportSparsityText, NumberStyles.Float, CultureInfo.InvariantCulture, out double supportSparsity) || supportSparsity <= 0)
+            {
+                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Validate model is loaded
             if (pureModel == null)
             {
@@ -466,6 +436,8 @@ namespace briocheSlicer
             gcodeSettings.NumberShells = shells;
             gcodeSettings.NumberFloors = floors;
             gcodeSettings.NumberRoofs = roofs;
+            gcodeSettings.InfillSparsity = infillSparsity * nozzleDiameter;
+            gcodeSettings.SupportSparsity = supportSparsity * nozzleDiameter;
 
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
@@ -512,6 +484,131 @@ namespace briocheSlicer
             // Add positive affordance
             MessageBox.Show($"G-code saved successfully to:\n{fullPath}",
                             "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        /// <summary>
+        /// Rotates the model 90° left around the Y-axis.
+        /// </summary>
+        private void RotateLeft_Click(object sender, RoutedEventArgs e)
+        {
+            RotateModel(new Vector3D(0, 1, 0), -90);
+        }
+
+        /// <summary>
+        /// Rotates the model 90° right around the Y-axis.
+        /// </summary>
+        private void RotateRight_Click(object sender, RoutedEventArgs e)
+        {
+            RotateModel(new Vector3D(0, 1, 0), 90);
+        }
+
+        /// <summary>
+        /// Rotates the model 90° forward around the X-axis.
+        /// </summary>
+        private void RotateFront_Click(object sender, RoutedEventArgs e)
+        {
+            RotateModel(new Vector3D(1, 0, 0), -90);
+        }
+
+        /// <summary>
+        /// Rotates the model 90° backward around the X-axis.
+        /// </summary>
+        private void RotateBack_Click(object sender, RoutedEventArgs e)
+        {
+            RotateModel(new Vector3D(1, 0, 0), 90);
+        }
+
+        /// <summary>
+        /// Rotates the actual puremodel geometry.
+        /// This results in a rotate object that will be sliced in the same way as it is
+        /// displayed on the build plate.
+        /// ** DISCLAIMER AI helped write this code.
+        /// </summary>
+        /// <param name="rotation">The rotation object to rotate the geometry by. Center and rotation.</param>
+        private void RotateModelGeometry(RotateTransform3D rotation)
+        {
+            if (pureModel == null) return;
+            foreach (var child in pureModel.Children)
+            {
+                if (child is GeometryModel3D geometryModel)
+                {
+                    if (geometryModel.Geometry is MeshGeometry3D mesh)
+                    {
+                        // Transform all vertex positions
+                        var transformedPositions = new Point3DCollection();
+                        foreach (var position in mesh.Positions)
+                        {
+                            transformedPositions.Add(rotation.Transform(position));
+                        }
+                        mesh.Positions = transformedPositions;
+
+                        // Transform normals if they exist
+                        if (mesh.Normals != null && mesh.Normals.Count > 0)
+                        {
+                            var transformedNormals = new Vector3DCollection();
+                            foreach (var normal in mesh.Normals)
+                            {
+                                var transformedNormal = rotation.Transform(normal);
+                                transformedNormal.Normalize();
+                                transformedNormals.Add(transformedNormal);
+                            }
+                            mesh.Normals = transformedNormals;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Rotates the model around a specified axis by the given angle.
+        /// </summary>
+        /// <param name="axis">The axis to rotate around</param>
+        /// <param name="angle">The angle in degrees</param>
+        private void RotateModel(Vector3D axis, double angle)
+        {
+            if (pureModel == null) return;
+
+            // Get the center point of the model
+            Point3D center = BuildPlate.CalculateBoundsCenter(modelBounds);
+
+            // Create rotation transform
+            var rotation = new RotateTransform3D(
+                new AxisAngleRotation3D(axis, angle),
+                center
+            );
+
+            // Apply the transformation to the actual geometry vertices
+            RotateModelGeometry(rotation);
+
+            // Update the model bounds after rotation
+            modelBounds = pureModel.Bounds;
+
+            // Update buildplate position based on the rotated model
+            if (buildPlate != null)
+            {
+                buildPlate.UpdatePosition(modelBounds);
+            }
+
+            // Update slicing plane based on the rotated model bounds
+            if (slicer?.Get_Slicing_Plane() != null)
+            {
+                var slicingPlane = slicer.Create_Slicing_plane(modelBounds);
+
+                // Replace the old slicing plane with the new one
+                var group = scene.Content as Model3DGroup;
+                if (group != null && group.Children.Count > 1)
+                {
+                    // We know that the last model in the group is the slicing plane
+                    group.Children[group.Children.Count - 1] = slicingPlane;
+                }
+            }
+
+            // Invalidate any existing slice data since the model geometry has changed
+            briocheModel = null;
+            PrintButton.IsEnabled = false;
+
+            View.ZoomExtents();
+            UpdateSliceHeightText(SliceHeightSlider.Value);
         }
 
         /// <summary>

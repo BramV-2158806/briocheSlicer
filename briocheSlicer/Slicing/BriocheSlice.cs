@@ -293,12 +293,19 @@ namespace briocheSlicer.Slicing
                 return new PathsD();
             }
 
+            // Define the self supporting area of the current layer
             var outershell = GetOuterShell();
             double selfSupportDelta = Math.Min(settings.NozzleDiameter / 2.0, settings.LayerHeight);
             var selfSupportingArea = Clipper.InflatePaths(outershell, selfSupportDelta, JoinType.Round, EndType.Polygon);
 
+            // Calculate the support region of the current layer: perimiter upper layer - self supporting area
             this.supportRegion = Clipper.Difference(perimeterAndSupportUpper, selfSupportingArea, FillRule.NonZero);
+
+            // We also want to add another little ofset to the support region.
+            // But for nows we have a scale issue bug
             //this.supportRegion = Clipper.InflatePaths(this.supportRegion, -0.01, JoinType.Round, EndType.Polygon);
+
+
             this.support = GenerateBoundedPattern(this.supportRegion, InfillPattern.Cross, layerIndex);
             return this.support;
 
