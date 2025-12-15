@@ -30,7 +30,7 @@ namespace briocheSlicer.Gcode
             double layerHeight = 0.2,
             double printSpeed = 50,
             double travelSpeed = 150,
-            double extrusionMultiplier = 0.98, // Calibratie van bambuu fillament
+            double extrusionMultiplier = 0.98,
             double filamentDiameter = 1.75,
             double filamentSurfaceArea = 2.405,
             int numberShells = 1,
