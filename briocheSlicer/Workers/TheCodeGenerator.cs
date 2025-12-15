@@ -15,7 +15,6 @@ namespace briocheSlicer.Workers
     internal class TheCodeGenerator
     {
         double currentExtrusion = 0.0;
-        private bool lastSupport = false;
 
         public TheCodeGenerator() {}
 
@@ -223,62 +222,6 @@ namespace briocheSlicer.Workers
 
             }
 
-        }
-
-        /// <summary>
-        /// True if any vertex of pathA is inside any polygon in pathsB, or vice versa.
-        /// This is a simple but robust test to detect overlap/continuation between slices.
-        /// </summary>
-        private static bool PathIntersectsAny(PathD pathA, PathsD pathsB)
-        {
-            if (pathA == null || pathA.Count == 0 || pathsB == null || pathsB.Count == 0) return false;
-
-            // Check any vertex of A inside B
-            foreach (var pt in pathA)
-            {
-                foreach (var poly in pathsB)
-                {
-                    if (poly == null || poly.Count < 3) continue;
-                    if (PointInPolygon(pt, poly)) return true;
-                }
-            }
-
-            // Check any vertex of B inside A
-            foreach (var poly in pathsB)
-            {
-                if (poly == null || poly.Count < 3) continue;
-                foreach (var pt in poly)
-                {
-                    if (PointInPolygon(pt, pathA)) return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Ray-casting point-in-polygon test (non-zero winding via crossings).
-        /// Returns true if point is inside polygon (polygon must be closed or open list of vertices).
-        /// </summary>
-        private static bool PointInPolygon(PointD p, PathD poly)
-        {
-            bool inside = false;
-            int n = poly.Count;
-            if (n < 3) return false;
-
-            for (int i = 0, j = n - 1; i < n; j = i++)
-            {
-                var pi = poly[i];
-                var pj = poly[j];
-
-                // Check if edge (pj -> pi) crosses the horizontal ray to the right of point p
-                bool intersect = ((pi.y > p.y) != (pj.y > p.y)) &&
-                                 (p.x < (pj.x - pi.x) * (p.y - pi.y) / ((pj.y - pi.y) == 0 ? double.Epsilon : (pj.y - pi.y)) + pi.x);
-                if (intersect)
-                    inside = !inside;
-            }
-
-            return inside;
         }
 
         private void AddShellCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings, double offset_x, double offset_y)

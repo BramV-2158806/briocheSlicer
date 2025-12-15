@@ -148,7 +148,6 @@ namespace briocheSlicer.Slicing
                     var support = nextLayer[0].GetSupportRegion()!;
                     var union = Clipper.Union(outerPerimeter, support, FillRule.EvenOdd);
                     slice.Generate_Support(union, i);
-                    //slice.SetSupport(Clipper.InflatePaths(outerPerimeter, 2, JoinType.Round, EndType.Polygon));
                 }
             }
         }

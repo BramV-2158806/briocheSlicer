@@ -125,7 +125,6 @@ namespace briocheSlicer.Workers
         public static List<BriocheEdge> Intersections_Of_Plane(List<BriocheTriangle> triangles, double planeZ)
         {
             var edges = new List<BriocheEdge>();
-            Debug.WriteLine($"--------------Calculating intersections at Z={planeZ}...");
             foreach (var tri in triangles)
             {
                 var triEdges = tri.Calculate_Intersection(planeZ);
@@ -180,23 +179,21 @@ namespace briocheSlicer.Workers
             double modelMinZ = modelBounds.Z;
             double modelMaxZ = modelBounds.Z + modelBounds.SizeZ;
 
+            // Calculate the bounds of the model
+            // Later used to position the model on the buildplate
             double modelMinX = modelBounds.X;
             double modelMaxX = modelBounds.X + modelBounds.SizeX;
-
             double modelMinY = modelBounds.Y;
             double modelMaxY = modelBounds.Y + modelBounds.SizeY;
-
             double model_width = modelMaxX - modelMinX;
             double model_height = modelMaxY - modelMinY;
-
             double model_center_x = modelMinX + model_width / 2;
             double model_center_y = modelMinY + model_height / 2;
-
             double offset_x = plate_center - model_center_x;
             double offset_y = plate_center - model_center_y;
 
             // callculate the amount of layers
-            // We round up, because rounding down is not pratcical
+            // Rather have a layer extra then miss a detail
             int layerCount = (int)Math.Ceiling(modelBounds.SizeZ / layerHeight.Value);
 
             // call the slice current plane function for each layer
@@ -208,7 +205,6 @@ namespace briocheSlicer.Workers
                 // We add 0.5 to get the middle of the layer
                 double currentZ = modelMinZ + (layerIdx + 0.5) * layerHeight.Value;
                 
-
                 BriocheSlice slice = Slice_Plane(triangels, currentZ, settings);
                 slices.Add(slice);
             }
