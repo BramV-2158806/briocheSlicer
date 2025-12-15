@@ -55,6 +55,15 @@
                                      ToolTip="Nozzle diameter in millimeters"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
                                      DataObject.Pasting="DecimalTextBox_Pasting"/>
+                            <!-- Extrusion retraction Length-->
+                            <TextBlock Text="Extursion Retraction Length (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ExtrusionRetractionTextBox"
+                                     Text="0,2"
+                                     Padding="5,3"
+                                     Margin="0,0,0,8"
+                                     ToolTip="Extrusion retraction length in millimeters"
+                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
                         </StackPanel>
                     </GroupBox>
 
