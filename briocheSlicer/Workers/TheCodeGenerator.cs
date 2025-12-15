@@ -207,7 +207,7 @@ namespace briocheSlicer.Workers
                     var previousPoint = path[i - 1];
                     double extrusion = currentExtrusion + GcodeHelpers.CalculateExtrusion(previousPoint, currentPoint, settings);
 
-                    gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x + offset_x:F3} Y{currentPoint.y + offset_y:F3} E{extrusion:F5}"));
+                    gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 30:F0} X{currentPoint.x + offset_x:F3} Y{currentPoint.y + offset_y:F3} E{extrusion:F5}"));
                     currentExtrusion = extrusion;
                 }
 
@@ -223,7 +223,7 @@ namespace briocheSlicer.Workers
                 if (distance > 0.001)
                 {
                     double closingExtrusion = currentExtrusion + GcodeHelpers.CalculateExtrusion(lastPoint, startPoint, settings);
-                    gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{startPoint.x + offset_x:F3} Y{startPoint.y + offset_y:F3} E{closingExtrusion:F5}"));
+                    gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 30:F0} X{startPoint.x + offset_x:F3} Y{startPoint.y + offset_y:F3} E{closingExtrusion:F5}"));
                     currentExtrusion = closingExtrusion;
                 }
 
