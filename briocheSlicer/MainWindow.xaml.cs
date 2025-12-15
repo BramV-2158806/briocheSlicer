@@ -378,6 +378,15 @@ namespace briocheSlicer
                 return;
             }
 
+            // Validate extrusion retraction input
+            string retracionText = Normalize(ExtrusionRetractionTextBox.Text);
+            if (!double.TryParse(retracionText, NumberStyles.Float, CultureInfo.InvariantCulture, out double retractionLength) || retractionLength <= 0)
+            {
+                MessageBox.Show("Please enter a valid extrusion retraction length (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Validate number of shells input
             if (!int.TryParse(ShellsTextBox.Text, out int shells) || shells < 1)
             {
@@ -433,6 +442,7 @@ namespace briocheSlicer
             slicer.Set_Nozzle_Diameter(nozzleDiameter);
             gcodeSettings.LayerHeight = layerHeight;
             gcodeSettings.NozzleDiameter = nozzleDiameter;
+            gcodeSettings.extrusion_rectrection_length = retractionLength;
             gcodeSettings.NumberShells = shells;
             gcodeSettings.NumberFloors = floors;
             gcodeSettings.NumberRoofs = roofs;
