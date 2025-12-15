@@ -195,17 +195,6 @@ namespace briocheSlicer.Workers
             {
                 if (path == null || path.Count < 2) continue;
 
-                //bool hasOverlapAbove = false;
-                //if (nextSupport != null && nextSupport.Count > 0)
-                //{
-                //    hasOverlapAbove = PathIntersectsAny(path, nextSupport);
-                //}
-
-                //if (!hasOverlapAbove)
-                //{
-                //    continue; // Skip this support path as it has no overlap above
-                //}
-
                 // Move to start position of infill line (travel move, no extrusion)
                 var firstPoint = path[0];
                 gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x + model.offset_x:F3} Y{firstPoint.y + model.offset_y:F3}"));
@@ -388,6 +377,11 @@ namespace briocheSlicer.Workers
             // Load start gcode
             string startGCode = LoadGcodeFromFile("start.gcode");
             gcode.AppendLine(startGCode);
+
+            // Add poop line to calibrate extrusion
+            gcode.AppendLine(Invariant($"G0 F{settings.PrintSpeed * 60:F0} X0 Y2"));
+            gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X100 Y2 E10"));
+            gcode.AppendLine(Invariant($"G92 E0"));
 
             // Add a friendly message
             gcode.AppendLine($"; Sliced by BriocheSlicer on {DateTime.Now}. Would you like a slice of brioche?");
