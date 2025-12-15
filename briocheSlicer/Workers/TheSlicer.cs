@@ -142,19 +142,14 @@ namespace briocheSlicer.Workers
         /// <returns></returns>
         public BriocheSlice Slice_Plane(List<BriocheTriangle> triangles, double planeZ, GcodeSettings settings)
         {
-            // Collect the edges from triangle intersections
+            // Calculate the edges which intersect the plane
             List<BriocheEdge> intersection_edges = Intersections_Of_Plane(triangles, planeZ);
+
+
             List<BriocheEdge> edges = Build_Unique_Edges(intersection_edges, planeZ);
 
             // Remove unnecessary edges.
             edges = EdgeUtils.Merge_Collinear(edges, EDGE_EPS);
-
-            // For debug purposes, print the edges.
-            Debug.WriteLine($"Slice at Z={planeZ} has {edges.Count} unique edges after merging collinear.");
-            foreach (BriocheEdge edge in edges)
-            {
-                edge.Print();
-            }
 
             // Create the slice and return.
             return new BriocheSlice(edges, planeZ, settings);

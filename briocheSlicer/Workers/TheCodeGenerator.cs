@@ -14,6 +14,8 @@ namespace briocheSlicer.Workers
 {
     internal class TheCodeGenerator
     {
+        // Variable to keep count of position in the E dimension.
+        // We use absolute extrusion but reset the extrusion position each layer.
         double currentExtrusion = 0.0;
 
         public TheCodeGenerator() {}
@@ -23,7 +25,7 @@ namespace briocheSlicer.Workers
         /// It searches for the file in a Resource folder.
         /// </summary>
         /// <param name="filename"></param>
-        /// <returns></returns>
+        /// <returns>String: the content of the file</returns>
         /// <exception cref="FileNotFoundException"></exception>
         private string LoadGcodeFromFile(string filename)
         {
@@ -62,10 +64,12 @@ namespace briocheSlicer.Workers
             gcode.AppendLine($"; Layer {layerIndex}");
 
             // Move to layer height - keep in mind the mid layer slicing
-            // remove thi mis layer slicing so we start from the bottom but we sliced 
+            // remove the mid layer slicing so we start from the bottom but we sliced 
             // in the middle of the layer
-            double extrusionHeight = settings.LayerHeight * layerIndex; // saw that cure starts at 2 + layerHeight
+            double extrusionHeight = settings.LayerHeight * layerIndex;
             gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight}"));
+
+            // Reset extrusion position
             gcode.AppendLine(Invariant($"G92 E0"));
             currentExtrusion = 0;
 
@@ -78,6 +82,7 @@ namespace briocheSlicer.Workers
             // Print infill
             AddInfillCode(gcode, slice, settings, model.offset_x, model.offset_y);
 
+            // Print support
             AddSupportCode(gcode, slice, settings, model, layerIndex);
         }
 
