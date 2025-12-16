@@ -458,7 +458,8 @@ namespace briocheSlicer
             if (useTreeSupport)
             {
                 // altered brioche model that now includes the tree trunks
-
+                TreeSupportGenerator generator = new TreeSupportGenerator();
+                pureModel = generator.LetTheForrestGrow(pureModel, scene);
 
                 // Make sure no other support is generated later
                 gcodeSettings.DisabledSupport = true;

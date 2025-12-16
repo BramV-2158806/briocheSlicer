@@ -1,6 +1,7 @@
-﻿using System.Windows.Media.Media3D;
-using HdbscanSharp.Distance;
+﻿using HdbscanSharp.Distance;
+using HdbscanSharp.Hdbscanstar;
 using HdbscanSharp.Runner;
+using System.Windows.Media.Media3D;
 using System.Windows.Media.Media3D;
 
 namespace briocheSlicer.Slicing
@@ -66,27 +67,37 @@ namespace briocheSlicer.Slicing
 
     internal class TreeSupportGenerator
     {
+        // Directions
+        private readonly Vector3D up = new Vector3D(0, 0, 1);
+
+        // Clustering variables
         private readonly int minClusterPoints = 4;
         private readonly int minClusterSize = 4;
 
+        // Path Generation variables
+        private readonly float generationSpeed = 2.0f;
+
         public TreeSupportGenerator() { }
 
-        public Model3DGroup LetTheForrestGrow(Model3DGroup pureModel)
+        public Model3DGroup LetTheForrestGrow(Model3DGroup pureModel, ModelVisual3D scene)
         {
             // Identify seeds
-            List<SeedPoint> seeds = SearchForSeeds(pureModel, new Vector3D(0, 0, 1));
+            List<SeedPoint> seeds = SearchForSeeds(pureModel);
 
             // Cluster seeds
             List<SeedCluster> clusters = ClusterSeeds(seeds);
 
-            // Generate paths
-
-            // Generate trunks from paths
+            // Generate paths and trunk models
+            Forrest forrest  = new Forrest(generationSpeed, clusters);
+            Model3DGroup trunkModels = forrest.GrowAround(scene);
 
             // Add trunks to model
+            pureModel.Children.Add(trunkModels);
+
+            return pureModel;
         }
 
-        private List<SeedPoint> SearchForSeeds(Model3D model, Vector3D up)
+        private List<SeedPoint> SearchForSeeds(Model3D model)
         {
             List<SeedPoint> seeds = new List<SeedPoint>();
 
@@ -95,7 +106,7 @@ namespace briocheSlicer.Slicing
             if (model is Model3DGroup group)
             {
                 foreach (var child in group.Children)
-                    seeds.AddRange(SearchForSeeds(child, up));
+                    seeds.AddRange(SearchForSeeds(child));
             }
 
             else if (model is GeometryModel3D geom && geom.Geometry is MeshGeometry3D mesh)
