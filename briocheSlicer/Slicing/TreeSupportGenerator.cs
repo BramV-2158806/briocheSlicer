@@ -1,10 +1,6 @@
-﻿using briocheSlicer.Gcode;
-using briocheSlicer.Workers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Windows.Media.Media3D;
+using HdbscanSharp.Distance;
+using HdbscanSharp.Runner;
 using System.Windows.Media.Media3D;
 
 namespace briocheSlicer.Slicing
@@ -20,10 +16,24 @@ namespace briocheSlicer.Slicing
     internal class SeedPoint
     {
         private Point3D point { get; }
+        public double x { get; }
+        public double y { get; }
+        public double z { get; }
 
         public SeedPoint(double x, double y, double z)
         {
             this.point = new Point3D(x, y, z);
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public SeedPoint(Point3D point)
+        {
+            this.point = point;
+            this.x = point.X;
+            this.y = point.Y;
+            this.z= point.Z;
         }
 
         public SeedPoint(Point3D v0, Point3D v1, Point3D v2)
@@ -32,6 +42,9 @@ namespace briocheSlicer.Slicing
             (v0.X + v1.X + v2.X) / 3.0,
             (v0.Y + v1.Y + v2.Y) / 3.0,
             (v0.Z + v1.Z + v2.Z) / 3.0);
+            this.x = point.X;
+            this.y = point.Y;
+            this.z = point.Z;
         }
     }
 
@@ -39,16 +52,23 @@ namespace briocheSlicer.Slicing
     {
         private SeedPoint center;
         private double radius;
+        private int clusterId;
+        private int numPoints;
 
-        public SeedCluster(SeedPoint center, double radius) 
+        public SeedCluster(SeedPoint center, double radius, int clusterId, int numPoints) 
         {
             this.center = center;
             this.radius = radius;
+            this.clusterId = clusterId;
+            this.numPoints = numPoints;
         }
     }
 
     internal class TreeSupportGenerator
     {
+        private readonly int minClusterPoints = 4;
+        private readonly int minClusterSize = 4;
+
         public TreeSupportGenerator() { }
 
         public Model3DGroup LetTheForrestGrow(Model3DGroup pureModel)
@@ -57,7 +77,7 @@ namespace briocheSlicer.Slicing
             List<SeedPoint> seeds = SearchForSeeds(pureModel, new Vector3D(0, 0, 1));
 
             // Cluster seeds
-            
+            List<SeedCluster> clusters = ClusterSeeds(seeds);
 
             // Generate paths
 
@@ -127,7 +147,64 @@ namespace briocheSlicer.Slicing
 
         private List<SeedCluster> ClusterSeeds(List<SeedPoint> seeds)
         {
+            // Use the HBDscan package to cluster the seed points
+            var clusters = HdbscanRunner.Run(seeds, point => new float[] { (float)point.x, (float)point.y }, minClusterPoints, minClusterSize, GenericEuclideanDistance.GetFunc);
 
+            // Post process the clusters to save to SeedClusters
+            List<SeedCluster> seedClusters = new List<SeedCluster>();
+            foreach (var cluster in clusters.Groups) // TODO: parallel with CUDA
+            {
+                // Extract the cluster ID (might be usefull)
+                int clusterId = cluster.Key;
+
+                // Extract the points belonging to this cluster.
+                var clusterPoints = cluster.Value;
+
+                // If the cluster is empty we skip it.
+                if (clusterPoints.Count == 0) { continue; }
+
+                // Calculate centriod position
+                Point3D centeroidPosition = CalculateClusterCentroid(clusterPoints);
+
+                // Calculate cluster size
+                double clusterRadius = CalculateClusterRadius(clusterPoints, centeroidPosition);
+
+                // Create the SeedCluster
+                SeedCluster seedCluster = new SeedCluster(new SeedPoint(centeroidPosition), clusterRadius, clusterId, clusterPoints.Count);
+            }
+            return seedClusters;
+        }
+
+        private Point3D CalculateClusterCentroid(List<SeedPoint> clusterPoints)
+        {
+            double sumX = 0, sumY = 0, sumZ = 0;
+            foreach (var p in clusterPoints)
+            {
+                sumX += p.x;
+                sumY += p.y;
+                sumZ += p.z;
+            }
+
+            double cx = sumX / clusterPoints.Count;
+            double cy = sumY / clusterPoints.Count;
+            double cz = sumZ / clusterPoints.Count;
+            return new Point3D(cx, cy, cz);
+        }
+
+        private double CalculateClusterRadius(List<SeedPoint> clusterPoints, Point3D centeroid)
+        {
+            double maxDistSq = 0;
+            foreach (var p in clusterPoints)
+            {
+                double dx = p.x - centeroid.X ;
+                double dy = p.y - centeroid.Y;
+                double dz = p.z - centeroid.Z;
+                double d2 = dx * dx + dy * dy + dz * dz;
+                if (d2 > maxDistSq) maxDistSq = d2;
+            }
+
+            double radius = Math.Sqrt(maxDistSq);
+            return radius;
         }
 
         private double CalculateAngle(Vector3D v1, Vector3D v2)
