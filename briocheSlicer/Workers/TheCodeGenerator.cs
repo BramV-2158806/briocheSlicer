@@ -137,7 +137,7 @@ namespace briocheSlicer.Workers
         private void AddFloorCode(StringBuilder gcode, PathsD floorPaths, GcodeSettings settings, double offset_x, double offset_y)
         {
             gcode.AppendLine("; Floor");
-            RetractHelper retractHelper = new RetractHelper(settings.extrusion_rectrection_length);
+            RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
             foreach (var path in floorPaths)
             {
                 if (path == null || path.Count < 2) continue;
@@ -188,7 +188,7 @@ namespace briocheSlicer.Workers
         /// <param name="offset_y"></param>
         private void AddRoofCode(StringBuilder gcode, PathsD roofPaths, GcodeSettings settings, double offset_x, double offset_y)
         {
-            RetractHelper retractHelper = new RetractHelper(settings.extrusion_rectrection_length);
+            RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
             gcode.AppendLine("; Roof");
             foreach (var path in roofPaths)
             {
@@ -255,7 +255,7 @@ namespace briocheSlicer.Workers
                 return;
             }
 
-            RetractHelper retractHelper = new RetractHelper(settings.extrusion_rectrection_length);
+            RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
 
             // Process each infill line (these are open paths)
             gcode.AppendLine("; support");
@@ -309,7 +309,7 @@ namespace briocheSlicer.Workers
             PathsD? shellPaths = slice.GetOuterLayer();
             if (shellPaths == null || shellPaths.Count == 0) return;
 
-            RetractHelper retractHelper = new RetractHelper(settings.extrusion_rectrection_length);
+            RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
 
             // Trace each shell path
             gcode.AppendLine("; schells");
@@ -358,7 +358,7 @@ namespace briocheSlicer.Workers
             PathsD? infillPaths = slice.GetInfill();
             if (infillPaths == null || infillPaths.Count == 0) return;
 
-            RetractHelper retractHelper = new RetractHelper(settings.extrusion_rectrection_length);
+            RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
 
             // Process each infill line (these are open paths)
             gcode.AppendLine("; infill");

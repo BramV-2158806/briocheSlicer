@@ -34,9 +34,9 @@ namespace briocheSlicer.Slicing
             this.settings = settings;
             this.offset_x = offset_x;
             this.offset_y = offset_y;
-
             Upwards_Pass();
             Downwards_Pass();
+
         }
 
         public BriocheSlice? GetSlice(int index)

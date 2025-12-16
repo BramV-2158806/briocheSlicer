@@ -442,7 +442,7 @@ namespace briocheSlicer
             slicer.Set_Nozzle_Diameter(nozzleDiameter);
             gcodeSettings.LayerHeight = layerHeight;
             gcodeSettings.NozzleDiameter = nozzleDiameter;
-            gcodeSettings.extrusion_rectrection_length = retractionLength;
+            gcodeSettings.ExtrusionRetractLength = retractionLength;
             gcodeSettings.NumberShells = shells;
             gcodeSettings.NumberFloors = floors;
             gcodeSettings.NumberRoofs = roofs;
@@ -452,6 +452,17 @@ namespace briocheSlicer
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
             PrintButton.IsEnabled = true;
+
+            // If enabled: pre processing step to generate the tree alterd model 
+            bool useTreeSupport = TreeSupportCheckBox.IsChecked == true;
+            if (useTreeSupport)
+            {
+                // altered brioche model that now includes the tree trunks
+
+
+                // Make sure no other support is generated later
+                gcodeSettings.DisabledSupport = true;
+            }
 
             // Slice the model
             briocheModel = slicer.Slice_Model(pureModel, gcodeSettings);
