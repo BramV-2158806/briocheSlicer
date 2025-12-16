@@ -17,7 +17,7 @@ namespace briocheSlicer.Slicing
         private bool isDoneGrowing;
         private Point3D? currentPosition;
         private double maxCollisionDetectionDistance = 5;
-        private double modelDistance = 0.80;
+        private double modelDistance = 2;
 
         public TrunkPath(double touchAreaSize, List<Point3D>? points = null)
         {
@@ -48,7 +48,7 @@ namespace briocheSlicer.Slicing
         /// </summary>
         /// <param name="growthSpeed"></param>
         /// <param name="modelVisual"></param>
-        public void Grow(double growthSpeed, ModelVisual3D modelVisual) 
+        public void Grow(double growthSpeed, Model3DGroup pureModel) 
         {
             if (currentPosition == null)
                 return;
@@ -58,28 +58,27 @@ namespace briocheSlicer.Slicing
             Vector3D direction = down;
             direction.Normalize();
 
-            var rayParams = new RayHitTestParameters(origin, direction);
-
             RayMeshGeometry3DHitTestResult? bestHit = null;
 
-            HitTestResultCallback callback = result =>
+            // Manually test against each geometry in the pure model
+            foreach (var child in pureModel.Children)
             {
-                var rayResult = result as RayHitTestResult;
-                if (rayResult is RayMeshGeometry3DHitTestResult meshHit)
+                if (child is GeometryModel3D geometryModel && geometryModel.Geometry is MeshGeometry3D mesh)
                 {
-                    // Optionally filter by distance from origin
-                    double dist = (meshHit.PointHit - origin).Length;
-                    if (dist <= maxCollisionDetectionDistance)
+                    var hit = RayMeshIntersection(origin, direction, mesh, geometryModel.Transform);
+                    if (hit != null)
                     {
-                        // Keep the nearest hit within the allowed distance
-                        if (bestHit == null || dist < (bestHit.PointHit - origin).Length)
-                            bestHit = meshHit;
+                        double dist = (hit.Value.hitPoint - origin).Length;
+                        if (dist <= maxCollisionDetectionDistance)
+                        {
+                            if (bestHit == null || dist < (bestHit.PointHit - origin).Length)
+                            {
+                                bestHit = CreateHitTestResult(hit.Value, mesh);
+                            }
+                        }
                     }
                 }
-                return HitTestResultBehavior.Continue;
-            };
-
-            VisualTreeHelper.HitTest(modelVisual, null, callback, rayParams);
+            }
 
             if (bestHit != null)
             {
@@ -89,6 +88,11 @@ namespace briocheSlicer.Slicing
             {
                 // Grow straight down
                 Point3D newTop = currentPosition.Value + down * growthSpeed;
+
+                // Cap bottom at buildplate
+                newTop.Z = Math.Max(0, newTop.Z);
+
+                // Add point to the list
                 points.Add(newTop);
                 currentPosition = newTop;
             }
@@ -132,6 +136,7 @@ namespace briocheSlicer.Slicing
                 nextPos = hitPoint + normal * modelDistance;
             }
 
+            nextPos.Z = Math.Max(0, nextPos.Z);
             points.Add(nextPos);
             currentPosition = nextPos;
         }
@@ -203,5 +208,96 @@ namespace briocheSlicer.Slicing
 
             return modelGroup;
         }
-    }
+
+        /// <summary>
+        /// Performs ray-mesh intersection test manually.
+        /// Returns hit point, normal, and vertex indices if intersection found.
+        /// ** Disclaimer: function written by AI**
+        /// </summary>
+        private (Point3D hitPoint, Vector3D normal, int v1, int v2, int v3)? RayMeshIntersection(
+            Point3D origin, Vector3D direction, MeshGeometry3D mesh, Transform3D? transform)
+        {
+            var positions = mesh.Positions;
+            var indices = mesh.TriangleIndices;
+
+            (Point3D hitPoint, Vector3D normal, int v1, int v2, int v3)? closestHit = null;
+            double closestDist = double.MaxValue;
+
+            for (int i = 0; i < indices.Count; i += 3)
+            {
+                var p0 = positions[indices[i]];
+                var p1 = positions[indices[i + 1]];
+                var p2 = positions[indices[i + 2]];
+
+                // Apply transform if present
+                if (transform != null && !transform.Value.IsIdentity)
+                {
+                    p0 = transform.Transform(p0);
+                    p1 = transform.Transform(p1);
+                    p2 = transform.Transform(p2);
+                }
+
+                // Möller–Trumbore intersection algorithm
+                var edge1 = p1 - p0;
+                var edge2 = p2 - p0;
+                var h = Vector3D.CrossProduct(direction, edge2);
+                var a = Vector3D.DotProduct(edge1, h);
+
+                if (a > -0.00001 && a < 0.00001)
+                    continue; // Ray is parallel to triangle
+
+                var f = 1.0 / a;
+                var s = origin - p0;
+                var u = f * Vector3D.DotProduct(s, h);
+
+                if (u < 0.0 || u > 1.0)
+                    continue;
+
+                var q = Vector3D.CrossProduct(s, edge1);
+                var v = f * Vector3D.DotProduct(direction, q);
+
+                if (v < 0.0 || u + v > 1.0)
+                    continue;
+
+                var t = f * Vector3D.DotProduct(edge2, q);
+
+                if (t > 0.00001 && t < closestDist)
+                {
+                    closestDist = t;
+                    var hitPoint = origin + direction * t;
+                    var normal = Vector3D.CrossProduct(edge1, edge2);
+                    normal.Normalize();
+                    closestHit = (hitPoint, normal, indices[i], indices[i + 1], indices[i + 2]);
+                }
+            }
+
+            return closestHit;
+        }
+
+        /// <summary>
+        /// Creates a RayMeshGeometry3DHitTestResult-like object from intersection data.
+        /// ** Disclaimer: function written by AI**
+        /// </summary>
+        private RayMeshGeometry3DHitTestResult CreateHitTestResult(
+            (Point3D hitPoint, Vector3D normal, int v1, int v2, int v3) hit, MeshGeometry3D mesh)
+        {
+            // We need to create a temporary visual for the hit test result
+            var dummyVisual = new ModelVisual3D();
+            var geometryModel = new GeometryModel3D(mesh, new DiffuseMaterial(Brushes.Transparent));
+            dummyVisual.Content = geometryModel;
+
+            // Create hit test parameters and perform a minimal hit test to get a valid result object
+            var rayParams = new RayHitTestParameters(hit.hitPoint, new Vector3D(0, 0, 1));
+            RayMeshGeometry3DHitTestResult? result = null;
+
+            VisualTreeHelper.HitTest(dummyVisual, null, (r) =>
+            {
+                if (r is RayMeshGeometry3DHitTestResult meshResult)
+                    result = meshResult;
+                return HitTestResultBehavior.Stop;
+            }, rayParams);
+
+            return result!;
+        }
+        }
 }

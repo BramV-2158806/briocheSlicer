@@ -16,6 +16,8 @@ namespace briocheSlicer.Slicing
         public Forrest(double growthSpeed, List<SeedCluster> clusters)
         {
             this.growthSpeed = growthSpeed;
+
+            // Initialise the forrest with the cluster centroid points.
             this.forrest = new List<TrunkPath>();
             foreach (var cluster in clusters)
             {
@@ -26,7 +28,7 @@ namespace briocheSlicer.Slicing
             this.clusters = clusters;
         }
 
-        public Model3DGroup GrowAround(ModelVisual3D scene)
+        public Model3DGroup GrowAround(Model3DGroup pureModel)
         {
             bool doneGrowing = false;
 
@@ -35,7 +37,7 @@ namespace briocheSlicer.Slicing
                 for (int trunkIndex = 0; trunkIndex < forrest.Count; trunkIndex++)
                 {
                     if (forrest[trunkIndex] != null && !forrest[trunkIndex].IsDoneGrowing())
-                    forrest[trunkIndex].Grow(growthSpeed, scene);
+                    forrest[trunkIndex].Grow(growthSpeed, pureModel);
                 }
                 Merge();
                 doneGrowing = AllTrunksDone();

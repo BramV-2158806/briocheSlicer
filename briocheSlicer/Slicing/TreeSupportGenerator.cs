@@ -77,15 +77,17 @@ namespace briocheSlicer.Slicing
         private readonly Vector3D up = new Vector3D(0, 0, 1);
 
         // Clustering variables
-        private readonly int minClusterPoints = 4;
-        private readonly int minClusterSize = 4;
+        private readonly int minClusterPoints = 1;
+        private readonly int minClusterSize = 1;
 
         // Path Generation variables
         private readonly float generationSpeed = 2.0f;
 
+        private readonly float connectionToModelDistance = 2.0f;
+
         public TreeSupportGenerator() { }
 
-        public Model3DGroup LetTheForrestGrow(Model3DGroup pureModel, ModelVisual3D scene)
+        public Model3DGroup LetTheForrestGrow(Model3DGroup pureModel)
         {
             // Identify seeds
             List<SeedPoint> seeds = SearchForSeeds(pureModel);
@@ -95,7 +97,7 @@ namespace briocheSlicer.Slicing
 
             // Generate paths and trunk models
             Forrest forrest  = new Forrest(generationSpeed, clusters);
-            Model3DGroup trunkModels = forrest.GrowAround(scene);
+            Model3DGroup trunkModels = forrest.GrowAround(pureModel);
 
             // Add trunks to model
             pureModel.Children.Add(trunkModels);
@@ -123,8 +125,8 @@ namespace briocheSlicer.Slicing
                 var vertices = mesh.Positions;
 
                 // Normalise the up vector
-                var upNormal = up;
-                upNormal.Normalize();
+                var downNormal = new Vector3D(0,0,-1);
+                downNormal.Normalize();
 
                 // We loop over the triangles. Each triangle consist of three vertices which are
                 // defined in the indices array.
@@ -145,15 +147,30 @@ namespace briocheSlicer.Slicing
                     Vector3D triNormal = n0 + n1 + n2;
                     triNormal.Normalize();
 
-                    double angle = CalculateAngle(triNormal, upNormal);
+                    double angle = CalculateAngle(triNormal, downNormal);
 
-                    // If the angle is bigger then 90 (perpendicular) + 45 (Self supporting)
-                    // it needs support
-                    if (angle >= 135)
+                    // If the angle with of the face normal with the downNormal is less then
+                    // 45 degrees, this item needs support. In this way we try to mitigate the
+                    // ambiguity between top and bottom facing surfaces.
+                    if (angle < 45)
                     {
                         var v0 = vertices[i0];
                         var v1 = vertices[i1];
                         var v2 = vertices[i2];
+
+                        // Calculate centroid of triangle
+                        // This well be the seedpoint position
+                        Point3D centroid = new Point3D(
+                            (v0.X + v1.X + v2.X) / 3.0,
+                            (v0.Y + v1.Y + v2.Y) / 3.0,
+                            (v0.Z + v1.Z + v2.Z) / 3.0);
+
+                        // We move the centroid a little in the direction
+                        // Of the triangle/face normal. Making support easier to remove.
+                        Point3D offsetCentroid = new Point3D(
+                            centroid.X - triNormal.X * connectionToModelDistance,
+                            centroid.Y - triNormal.Y * connectionToModelDistance,
+                            centroid.Z - triNormal.Z * connectionToModelDistance);
 
                         seeds.Add(new SeedPoint(v0, v1, v2));
                     } 
