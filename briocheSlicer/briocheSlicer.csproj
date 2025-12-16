@@ -21,16 +21,17 @@
 
   <ItemGroup>
     <PackageReference Include="Clipper2" Version="1.5.4" />
+    <PackageReference Include="HdbscanSharp" Version="3.0.1" />
     <PackageReference Include="HelixToolkit.Wpf" Version="2.27.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Docs\" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\start.gcode" />
     <EmbeddedResource Include="Resources\end.gcode" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Docs\Prompts\" />
   </ItemGroup>
 
 </Project>

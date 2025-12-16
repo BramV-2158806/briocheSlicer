@@ -16,7 +16,13 @@ namespace briocheSlicer.Slicing
         public Forrest(double growthSpeed, List<SeedCluster> clusters)
         {
             this.growthSpeed = growthSpeed;
-            this.forrest = new List<TrunkPath>(clusters.Count);
+            this.forrest = new List<TrunkPath>();
+            foreach (var cluster in clusters)
+            {
+                List<Point3D> points = new List<Point3D>();
+                points.Add(cluster.GetCentroidPoint());
+                this.forrest.Add(new TrunkPath(cluster.GetRadius(), points));
+            }
             this.clusters = clusters;
         }
 
@@ -38,6 +44,8 @@ namespace briocheSlicer.Slicing
             var modelGroup = new Model3DGroup();
             foreach (var trunk in  forrest) 
             {
+                if (trunk == null) continue;
+
                 var trunkModel = trunk.Thicken();
                 modelGroup.Children.Add(trunkModel);
             }

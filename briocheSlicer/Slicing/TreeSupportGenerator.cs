@@ -16,7 +16,7 @@ namespace briocheSlicer.Slicing
 
     internal class SeedPoint
     {
-        private Point3D point { get; }
+        public Point3D point { get; }
         public double x { get; }
         public double y { get; }
         public double z { get; }
@@ -62,6 +62,12 @@ namespace briocheSlicer.Slicing
             this.radius = radius;
             this.clusterId = clusterId;
             this.numPoints = numPoints;
+        }
+
+        public double GetRadius() { return radius; }
+        public Point3D GetCentroidPoint()
+        {
+            return center.point;
         }
     }
 
@@ -182,6 +188,8 @@ namespace briocheSlicer.Slicing
 
                 // Create the SeedCluster
                 SeedCluster seedCluster = new SeedCluster(new SeedPoint(centeroidPosition), clusterRadius, clusterId, clusterPoints.Count);
+
+                seedClusters.Add(seedCluster);
             }
             return seedClusters;
         }

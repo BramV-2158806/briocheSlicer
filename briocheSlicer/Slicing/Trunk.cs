@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.Diagnostics;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using HelixToolkit.Wpf;
@@ -92,6 +93,7 @@ namespace briocheSlicer.Slicing
                 currentPosition = newTop;
             }
 
+            Debug.WriteLineIf(true, "Current Z value" + currentPosition.Value.Z);
             if (currentPosition != null && currentPosition.Value.Z <= 0) 
             {
                 isDoneGrowing = true;
@@ -118,8 +120,17 @@ namespace briocheSlicer.Slicing
             Vector3D normal = Vector3D.CrossProduct(p1 - p0, p2 - p0);
             normal.Normalize();
 
-            Point3D hitPoint = hit.PointHit;
-            Point3D nextPos = hitPoint + normal * modelDistance;
+            Point3D nextPos;
+            // Make sure it does not "keep bouncing of" the build plate
+            if (normal == new Vector3D(0,0, 1) && !(currentPosition == null)) 
+            {
+                nextPos = currentPosition.Value + down * growthSpeed;
+            }
+            else
+            {
+                Point3D hitPoint = hit.PointHit;
+                nextPos = hitPoint + normal * modelDistance;
+            }
 
             points.Add(nextPos);
             currentPosition = nextPos;
