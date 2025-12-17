@@ -1,6 +1,7 @@
 ﻿using briocheSlicer.Gcode;
 using briocheSlicer.Rendering;
 using briocheSlicer.Slicing;
+using briocheSlicer.Slicing.TreeSupport;
 using briocheSlicer.Workers;
 using HelixToolkit.Wpf;
 using Microsoft.Win32;

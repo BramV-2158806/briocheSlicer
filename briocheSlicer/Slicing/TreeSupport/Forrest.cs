@@ -5,13 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
 
-namespace briocheSlicer.Slicing
+namespace briocheSlicer.Slicing.TreeSupport
 {
     internal class Forrest
     {
         private List<TrunkPath> forrest;
         private double growthSpeed;
-        private List<SeedCluster> clusters;
 
         public Forrest(double growthSpeed, List<SeedCluster> clusters)
         {
@@ -23,9 +22,8 @@ namespace briocheSlicer.Slicing
             {
                 List<Point3D> points = new List<Point3D>();
                 points.Add(cluster.GetCentroidPoint());
-                this.forrest.Add(new TrunkPath(cluster.GetRadius(), points));
+                this.forrest.Add(new TrunkPath(cluster.GetSize(), points));
             }
-            this.clusters = clusters;
         }
 
         public Model3DGroup GrowAround(Model3DGroup pureModel)

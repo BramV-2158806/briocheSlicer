@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
-namespace briocheSlicer.Slicing
+namespace briocheSlicer.Slicing.TreeSupport
 {
     internal class TrunkPath
     {
@@ -13,14 +13,14 @@ namespace briocheSlicer.Slicing
         private readonly Vector3D down = new Vector3D(0, 0, -1);
 
         private List<Point3D> points;
-        private double touchAreaSize;
-        private double trunkAreaSize;
+        private double touchAreaRadius;
+        private double trunkRadius;
         private bool isDoneGrowing;
         private Point3D? currentPosition;
         private double maxCollisionDetectionDistance = 5;
         private double modelDistance = 2;
 
-        public TrunkPath(double touchAreaSize, List<Point3D>? points = null)
+        public TrunkPath(double ClusterFaceSize, List<Point3D>? points = null)
         {
             if (points == null)
             {
@@ -33,14 +33,14 @@ namespace briocheSlicer.Slicing
                 this.currentPosition = points.Last();
             }
 
-            this.touchAreaSize = touchAreaSize;
-            this.trunkAreaSize = Math.Max(2, touchAreaSize / 2);
+            this.touchAreaRadius = AreaToRadius(ClusterFaceSize);
+            this.trunkRadius = Math.Max(2, touchAreaRadius / 2);
             this.isDoneGrowing = false;
         }
 
         public bool IsDoneGrowing() { return this.isDoneGrowing; }
         public void SetIsDoneGorwing(bool value) { this.isDoneGrowing = value; }
-        public double GetTrunkAreaSize() { return this.trunkAreaSize; }
+        public double GetTrunkAreaSize() { return this.trunkRadius; }
         public Point3D? GetCurrentPosition() { return this.currentPosition; }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace briocheSlicer.Slicing
                 double coneHeight = direction.Length;
                 
                 var meshBuilder = new MeshBuilder(false, false);
-                meshBuilder.AddCone(tipPoint, direction, touchAreaSize, trunkAreaSize, coneHeight, true, true, 16);
+                meshBuilder.AddCone(tipPoint, direction, touchAreaRadius, trunkRadius, coneHeight, true, true, 16);
                 
                 var coneGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
                 modelGroup.Children.Add(coneGeometry);
@@ -188,7 +188,7 @@ namespace briocheSlicer.Slicing
                 if (length > 0)
                 {
                     var meshBuilder = new MeshBuilder(false, false);
-                    meshBuilder.AddCylinder(startPoint, endPoint, trunkAreaSize, 16);
+                    meshBuilder.AddCylinder(startPoint, endPoint, trunkRadius, 16);
                     
                     var cylinderGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
                     modelGroup.Children.Add(cylinderGeometry);
@@ -202,7 +202,7 @@ namespace briocheSlicer.Slicing
         {
             var modelGroup = new Model3DGroup();
             var meshBuilder = new MeshBuilder(false, false);
-            meshBuilder.AddSphere(position, trunkAreaSize / 2, 16, 16);
+            meshBuilder.AddSphere(position, trunkRadius / 2, 16, 16);
             var sphereGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
             modelGroup.Children.Add(sphereGeometry);
             return modelGroup;
@@ -274,29 +274,14 @@ namespace briocheSlicer.Slicing
         }
 
         /// <summary>
-        /// Creates a RayMeshGeometry3DHitTestResult-like object from intersection data.
-        /// ** Disclaimer: function written by AI**
+        /// Converts a touch area size to a radius that fits within that area.
+        /// Assumes circular area where Area = π × r²
         /// </summary>
-        private RayMeshGeometry3DHitTestResult CreateHitTestResult(
-            (Point3D hitPoint, Vector3D normal, int v1, int v2, int v3) hit, MeshGeometry3D mesh)
+        /// <param name="areaSize">The area size to convert</param>
+        /// <returns>The radius that would fit in the given area</returns>
+        private double AreaToRadius(double areaSize)
         {
-            // We need to create a temporary visual for the hit test result
-            var dummyVisual = new ModelVisual3D();
-            var geometryModel = new GeometryModel3D(mesh, new DiffuseMaterial(Brushes.Transparent));
-            dummyVisual.Content = geometryModel;
-
-            // Create hit test parameters and perform a minimal hit test to get a valid result object
-            var rayParams = new RayHitTestParameters(hit.hitPoint, new Vector3D(0, 0, 1));
-            RayMeshGeometry3DHitTestResult? result = null;
-
-            VisualTreeHelper.HitTest(dummyVisual, null, (r) =>
-            {
-                if (r is RayMeshGeometry3DHitTestResult meshResult)
-                    result = meshResult;
-                return HitTestResultBehavior.Stop;
-            }, rayParams);
-
-            return result!;
+            return Math.Sqrt(areaSize / Math.PI);
         }
-        }
+    }
 }
