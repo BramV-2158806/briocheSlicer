@@ -58,10 +58,15 @@ namespace briocheSlicer.Slicing.TreeSupport
 
             else if (model is GeometryModel3D geom && geom.Geometry is MeshGeometry3D mesh)
             {
-                // Collect the mesh indices, which point to the vertices and there respected normals
-                var indices = mesh.TriangleIndices;
-                var normals = mesh.Normals;
-                var vertices = mesh.Positions;
+                // Copy WPF collections to arrays to avoid thread affinity issues
+                int[] indicesArray = new int[mesh.TriangleIndices.Count];
+                mesh.TriangleIndices.CopyTo(indicesArray, 0);
+                
+                Vector3D[] normalsArray = new Vector3D[mesh.Normals.Count];
+                mesh.Normals.CopyTo(normalsArray, 0);
+                
+                Point3D[] verticesArray = new Point3D[mesh.Positions.Count];
+                mesh.Positions.CopyTo(verticesArray, 0);
 
                 // Normalise the up vector
                 var downNormal = new Vector3D(0,0,-1);
@@ -69,17 +74,20 @@ namespace briocheSlicer.Slicing.TreeSupport
 
                 // We loop over the triangles. Each triangle consist of three vertices which are
                 // defined in the indices array.
-                for (int t = 0; t < indices.Count; t += 3) // TODO: Implement in CUDA
+                object lockObj = new object();
+                Parallel.For(0, indicesArray.Length / 3, i =>
                 {
+                    int t = i * 3;
+                    
                     // Collect the indices for this traingle
-                    int i0 = indices[t];
-                    int i1 = indices[t + 1];
-                    int i2 = indices[t + 2];
+                    int i0 = indicesArray[t];
+                    int i1 = indicesArray[t + 1];
+                    int i2 = indicesArray[t + 2];
 
                     // In the same way we collect the normals
-                    Vector3D n0 = normals[i0];
-                    Vector3D n1 = normals[i1];
-                    Vector3D n2 = normals[i2];
+                    Vector3D n0 = normalsArray[i0];
+                    Vector3D n1 = normalsArray[i1];
+                    Vector3D n2 = normalsArray[i2];
 
                     // We calculate the average normal for this triangle
                     // AI helped with this idea.
@@ -93,9 +101,9 @@ namespace briocheSlicer.Slicing.TreeSupport
                     // ambiguity between top and bottom facing surfaces.
                     if (angle < 45)
                     {
-                        var v0 = vertices[i0];
-                        var v1 = vertices[i1];
-                        var v2 = vertices[i2];
+                        var v0 = verticesArray[i0];
+                        var v1 = verticesArray[i1];
+                        var v2 = verticesArray[i2];
 
                         double faceSize = SeedPoint.CalculateTriangleSize(v0, v1, v2);
 
@@ -113,9 +121,12 @@ namespace briocheSlicer.Slicing.TreeSupport
                             centroid.Y - triNormal.Y * connectionToModelDistance,
                             centroid.Z - triNormal.Z * connectionToModelDistance);
 
-                        seeds.Add(new SeedPoint(offsetCentroid, faceSize));
-                    } 
-                }
+                        lock (lockObj)
+                        {
+                            seeds.Add(new SeedPoint(offsetCentroid, faceSize));
+                        }
+                    }
+                });
             } 
             return seeds;
         }
