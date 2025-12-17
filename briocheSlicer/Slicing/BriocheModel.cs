@@ -132,7 +132,10 @@ namespace briocheSlicer.Slicing
                 if (i >= this.amount_Layers - settings.NumberRoofs)
                 {
                     slice.Generate_Roof(new List<PathsD>(), true);
-                    slice.Generate_Support(new PathsD(), i, true);
+                    if (!settings.DisabledSupport)
+                    {
+                        slice.Generate_Support(new PathsD(), i, true);
+                    }
                 }
                 else
                 {
@@ -144,11 +147,14 @@ namespace briocheSlicer.Slicing
                     slice.Generate_Roof(prev_innerPerimiters!);
 
                     // Handle support
-                    var prev_layer = GetLayersAbove(i, 1);
-                    var prev_outerPerimeter = prev_layer[0].GetOuterShell()!;
-                    var prev_support = prev_layer[0].GetSupportRegion()!;
-                    var prev_perim_support = Clipper.Union(prev_outerPerimeter, prev_support, FillRule.EvenOdd);
-                    slice.Generate_Support(prev_perim_support, i);
+                    if (!settings.DisabledSupport)
+                    {
+                        var prev_layer = GetLayersAbove(i, 1);
+                        var prev_outerPerimeter = prev_layer[0].GetOuterShell()!;
+                        var prev_support = prev_layer[0].GetSupportRegion()!;
+                        var prev_perim_support = Clipper.Union(prev_outerPerimeter, prev_support, FillRule.EvenOdd);
+                        slice.Generate_Support(prev_perim_support, i);
+                    }
                 }
                 slice.Generate_Infill();
             }

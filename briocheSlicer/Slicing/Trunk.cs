@@ -1,8 +1,9 @@
-﻿using System.Diagnostics;
+﻿using HelixToolkit.Wpf;
+using System.Diagnostics;
+using System.Security.Policy;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-using HelixToolkit.Wpf;
 
 namespace briocheSlicer.Slicing
 {
@@ -53,12 +54,12 @@ namespace briocheSlicer.Slicing
             if (currentPosition == null)
                 return;
 
-            // Ray origin = current trunk position
             Point3D origin = currentPosition.Value;
             Vector3D direction = down;
             direction.Normalize();
 
-            RayMeshGeometry3DHitTestResult? bestHit = null;
+            (Point3D hitPoint, Vector3D normal, int v1, int v2, int v3)? bestHit = null;
+            double closestDist = double.MaxValue;
 
             // Manually test against each geometry in the pure model
             foreach (var child in pureModel.Children)
@@ -69,12 +70,10 @@ namespace briocheSlicer.Slicing
                     if (hit != null)
                     {
                         double dist = (hit.Value.hitPoint - origin).Length;
-                        if (dist <= maxCollisionDetectionDistance)
+                        if (dist <= maxCollisionDetectionDistance && dist < closestDist)
                         {
-                            if (bestHit == null || dist < (bestHit.PointHit - origin).Length)
-                            {
-                                bestHit = CreateHitTestResult(hit.Value, mesh);
-                            }
+                            closestDist = dist;
+                            bestHit = hit;
                         }
                     }
                 }
@@ -82,22 +81,18 @@ namespace briocheSlicer.Slicing
 
             if (bestHit != null)
             {
-                HandleHit(bestHit, growthSpeed);
+                HandleHit(bestHit.Value, growthSpeed);
             }
             else
             {
                 // Grow straight down
                 Point3D newTop = currentPosition.Value + down * growthSpeed;
-
-                // Cap bottom at buildplate
                 newTop.Z = Math.Max(0, newTop.Z);
-
-                // Add point to the list
                 points.Add(newTop);
                 currentPosition = newTop;
             }
 
-            Debug.WriteLineIf(true, "Current Z value" + currentPosition.Value.Z);
+            Debug.WriteLineIf(true, "Current Z value: " + currentPosition.Value.Z);
             if (currentPosition != null && currentPosition.Value.Z <= 0) 
             {
                 isDoneGrowing = true;
@@ -111,28 +106,20 @@ namespace briocheSlicer.Slicing
         /// </summary>
         /// <param name="hit"></param>
         /// <param name="growthSpeed"></param>
-        private void HandleHit(RayMeshGeometry3DHitTestResult hit, double growthSpeed) 
+        private void HandleHit((Point3D hitPoint, Vector3D normal, int v1, int v2, int v3) hit, double growthSpeed) 
         {
-            var mesh = hit.MeshHit;
-
-            // Triangle vertices
-            var p0 = mesh.Positions[hit.VertexIndex1];
-            var p1 = mesh.Positions[hit.VertexIndex2];
-            var p2 = mesh.Positions[hit.VertexIndex3];
-
-            // triangle face normal (robust if vertex normals are not set nicely)
-            Vector3D normal = Vector3D.CrossProduct(p1 - p0, p2 - p0);
+            var normal = hit.normal;
             normal.Normalize();
 
             Point3D nextPos;
-            // Make sure it does not "keep bouncing of" the build plate
-            if (normal == new Vector3D(0,0, 1) && !(currentPosition == null)) 
+            // Make sure it does not "keep bouncing off" the build plate
+            if (normal == new Vector3D(0, 0, 1) && currentPosition != null) 
             {
                 nextPos = currentPosition.Value + down * growthSpeed;
             }
             else
             {
-                Point3D hitPoint = hit.PointHit;
+                Point3D hitPoint = hit.hitPoint;
                 nextPos = hitPoint + normal * modelDistance;
             }
 
@@ -170,10 +157,16 @@ namespace briocheSlicer.Slicing
                 Point3D tipPoint = points[0];
                 Point3D nextPoint = points[1];
                 Vector3D direction = nextPoint - tipPoint;
+
+                if (direction.Length <= 0.1f)
+                {
+                    return CreateSphere(tipPoint, material);
+                }
+
                 double coneHeight = direction.Length;
                 
                 var meshBuilder = new MeshBuilder(false, false);
-                meshBuilder.AddCone(tipPoint, direction, trunkAreaSize, trunkAreaSize, coneHeight, true, true, 16);
+                meshBuilder.AddCone(tipPoint, direction, touchAreaSize, trunkAreaSize, coneHeight, true, true, 16);
                 
                 var coneGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
                 modelGroup.Children.Add(coneGeometry);
@@ -181,11 +174,7 @@ namespace briocheSlicer.Slicing
             else if (points.Count == 1)
             {
                 // Just a single point - create a small sphere
-                var meshBuilder = new MeshBuilder(false, false);
-                meshBuilder.AddSphere(points[0], trunkAreaSize / 2, 16, 16);
-                var sphereGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
-                modelGroup.Children.Add(sphereGeometry);
-                return modelGroup;
+                return CreateSphere(points[0], material);
             }
 
             // Create cylinders connecting the rest of the points
@@ -206,6 +195,16 @@ namespace briocheSlicer.Slicing
                 }
             }
 
+            return modelGroup;
+        }
+
+        private Model3DGroup CreateSphere(Point3D position, DiffuseMaterial material) 
+        {
+            var modelGroup = new Model3DGroup();
+            var meshBuilder = new MeshBuilder(false, false);
+            meshBuilder.AddSphere(position, trunkAreaSize / 2, 16, 16);
+            var sphereGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
+            modelGroup.Children.Add(sphereGeometry);
             return modelGroup;
         }
 

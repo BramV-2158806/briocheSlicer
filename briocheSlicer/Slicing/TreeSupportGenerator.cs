@@ -73,12 +73,9 @@ namespace briocheSlicer.Slicing
 
     internal class TreeSupportGenerator
     {
-        // Directions
-        private readonly Vector3D up = new Vector3D(0, 0, 1);
-
         // Clustering variables
         private readonly int minClusterPoints = 1;
-        private readonly int minClusterSize = 1;
+        private readonly int minClusterSize = 2;
 
         // Path Generation variables
         private readonly float generationSpeed = 2.0f;
@@ -87,6 +84,11 @@ namespace briocheSlicer.Slicing
 
         public TreeSupportGenerator() { }
 
+        /// <summary>
+        /// Main tree support function.
+        /// </summary>
+        /// <param name="pureModel"></param>
+        /// <returns></returns>
         public Model3DGroup LetTheForrestGrow(Model3DGroup pureModel)
         {
             // Identify seeds
