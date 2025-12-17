@@ -296,7 +296,7 @@ namespace briocheSlicer.Slicing
             // Define the self supporting area of the current layer
             var outershell = GetOuterShell();
             double selfSupportDelta = Math.Min(settings.NozzleDiameter / 2.0, settings.LayerHeight);
-            var selfSupportingArea = Clipper.InflatePaths(outershell, selfSupportDelta, JoinType.Round, EndType.Polygon);
+            var selfSupportingArea = Clipper.InflatePaths(outershell!, selfSupportDelta, JoinType.Round, EndType.Polygon);
 
             // Calculate the support region of the current layer: perimiter upper layer - self supporting area
             this.supportRegion = Clipper.Difference(perimeterAndSupportUpper, selfSupportingArea, FillRule.NonZero);
