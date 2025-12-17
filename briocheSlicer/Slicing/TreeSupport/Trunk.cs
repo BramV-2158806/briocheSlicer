@@ -81,6 +81,7 @@ namespace briocheSlicer.Slicing.TreeSupport
 
             if (bestHit != null)
             {
+
                 HandleHit(bestHit.Value, growthSpeed);
             }
             else

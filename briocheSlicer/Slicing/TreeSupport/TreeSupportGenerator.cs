@@ -1,5 +1,7 @@
 ﻿using HdbscanSharp.Distance;
 using HdbscanSharp.Runner;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Windows.Media.Media3D;
 
 namespace briocheSlicer.Slicing.TreeSupport
@@ -72,9 +74,11 @@ namespace briocheSlicer.Slicing.TreeSupport
                 var downNormal = new Vector3D(0,0,-1);
                 downNormal.Normalize();
 
+                // Create local copy of model lowerbounds.
+
                 // We loop over the triangles. Each triangle consist of three vertices which are
                 // defined in the indices array.
-                object lockObj = new object();
+                var localSeeds = new ConcurrentBag<SeedPoint>();
                 Parallel.For(0, indicesArray.Length / 3, i =>
                 {
                     int t = i * 3;
@@ -121,12 +125,11 @@ namespace briocheSlicer.Slicing.TreeSupport
                             centroid.Y - triNormal.Y * connectionToModelDistance,
                             centroid.Z - triNormal.Z * connectionToModelDistance);
 
-                        lock (lockObj)
-                        {
-                            seeds.Add(new SeedPoint(offsetCentroid, faceSize));
-                        }
+                        localSeeds.Add(new SeedPoint(offsetCentroid, faceSize));
                     }
                 });
+
+                seeds.AddRange(localSeeds);
             } 
             return seeds;
         }
