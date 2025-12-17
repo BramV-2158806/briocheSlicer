@@ -17,9 +17,6 @@ namespace briocheSlicer.Slicing.TreeSupport
         private readonly int minClusterPoints = 1;
         private readonly int minClusterSize = 2;
 
-        // Path Generation variables
-        private readonly float generationSpeed = 2.0f;
-
         private readonly float connectionToModelDistance = -0.2f;
 
         public TreeSupportGenerator() { }
@@ -38,7 +35,7 @@ namespace briocheSlicer.Slicing.TreeSupport
             List<SeedCluster> clusters = ClusterSeeds(seeds);
 
             // Generate paths and trunk models
-            Forrest forrest  = new Forrest(generationSpeed, clusters);
+            Forrest forrest  = new Forrest(clusters);
             Model3DGroup trunkModels = forrest.GrowAround(pureModel);
 
             // Add trunks to model

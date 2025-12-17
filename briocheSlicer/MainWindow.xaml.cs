@@ -456,18 +456,40 @@ namespace briocheSlicer
 
             // If enabled: pre processing step to generate the tree alterd model 
             bool useTreeSupport = TreeSupportCheckBox.IsChecked == true;
+            Model3DGroup displayModel;
             if (useTreeSupport)
             {
                 // altered brioche model that now includes the tree trunks
                 TreeSupportGenerator generator = new TreeSupportGenerator();
-                pureModel = generator.LetTheForrestGrow(pureModel);
+                displayModel = generator.LetTheForrestGrow(pureModel);
 
                 // Make sure no other support is generated later
                 gcodeSettings.DisabledSupport = true;
             }
+            else
+            {
+                displayModel = pureModel;
+            }
+
+            // Update the build plate position based on the display model bounds
+            if (buildPlate == null)
+            {
+                buildPlate = new BuildPlate(displayModel.Bounds, 256);
+            }
+            else
+            {
+                buildPlate.UpdatePosition(displayModel.Bounds);
+            }
+            displayModel.Children.Add(buildPlate.GetModel());
+
+            // Create/update the slicing plane for the display model
+            GeometryModel3D slicingPlane = slicer.Create_Slicing_plane(displayModel.Bounds);
+            displayModel.Children.Add(slicingPlane);
+
+            scene.Content = displayModel;
 
             // Slice the model
-            briocheModel = slicer.Slice_Model(pureModel, gcodeSettings);
+            briocheModel = slicer.Slice_Model(displayModel, gcodeSettings);
 
             // Reset slice plane to middle of object to show new slice with updated settings
             SliceHeightSlider.Value = 50;

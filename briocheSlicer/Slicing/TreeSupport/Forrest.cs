@@ -10,12 +10,9 @@ namespace briocheSlicer.Slicing.TreeSupport
     internal class Forrest
     {
         private List<TrunkPath> forrest;
-        private double growthSpeed;
 
-        public Forrest(double growthSpeed, List<SeedCluster> clusters)
+        public Forrest(List<SeedCluster> clusters)
         {
-            this.growthSpeed = growthSpeed;
-
             // Initialise the forrest with the cluster centroid points.
             this.forrest = new List<TrunkPath>();
             foreach (var cluster in clusters)
@@ -28,6 +25,13 @@ namespace briocheSlicer.Slicing.TreeSupport
 
         public Model3DGroup GrowAround(Model3DGroup pureModel)
         {
+            // Calculate growhtspeed based on model bounds
+            // Make it 1/10 of the model height
+            // so on average each trunk is about 10 nodes.
+            Rect3D modelBounds = pureModel.Bounds;
+            double modelHeight = modelBounds.SizeZ;
+            double growthSpeed = modelHeight / 10.0;
+
             bool doneGrowing = false;
 
             while (!doneGrowing) 

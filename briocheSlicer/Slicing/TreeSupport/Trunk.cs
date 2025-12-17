@@ -140,63 +140,74 @@ namespace briocheSlicer.Slicing.TreeSupport
 
         /// <summary>
         /// Creates a 3D model with a cone at the first point and cylinders connecting subsequent points.
-        /// ** Disclaimer: this function is written by AI **
         /// </summary>
         /// <returns>A Model3D representing the thickened trunk path.</returns>
         public Model3D Thicken() 
         {
-            if (points.Count == 0)
-                return new Model3DGroup();
-
-            var modelGroup = new Model3DGroup();
             var material = new DiffuseMaterial(new SolidColorBrush(Colors.Brown));
 
             // Create cone at the first point
             if (points.Count >= 2)
             {
-                Point3D tipPoint = points[0];
-                Point3D nextPoint = points[1];
-                Vector3D direction = nextPoint - tipPoint;
-
-                if (direction.Length <= 0.1f)
-                {
-                    return CreateSphere(tipPoint, material);
-                }
-
-                double coneHeight = direction.Length;
-                
-                var meshBuilder = new MeshBuilder(false, false);
-                meshBuilder.AddCone(tipPoint, direction, touchAreaRadius, trunkRadius, coneHeight, true, true, 16);
-                
-                var coneGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
-                modelGroup.Children.Add(coneGeometry);
+                return CreateTrunkGroup(material);
             }
             else if (points.Count == 1)
             {
                 // Just a single point - create a small sphere
                 return CreateSphere(points[0], material);
             }
+            return new Model3DGroup();
+        }
 
-            // Create cylinders connecting the rest of the points
-            for (int i = 1; i < points.Count - 1; i++)
+        private Model3DGroup CreateTrunkGroup(DiffuseMaterial material)
+        {
+            var modelGroup = new Model3DGroup();
+            // 1. Calculate total branch length first
+            double totalLength = 0;
+            for (int i = 0; i < points.Count - 1; i++)
+            {
+                totalLength += (points[i + 1] - points[i]).Length;
+            }
+
+            // 2. Calculate a constant taper rate
+            // This distributes the radius change evenly from top to bottom
+            double totalRadiusChange = touchAreaRadius - trunkRadius;
+            double taperPerUnit = totalRadiusChange / totalLength;
+
+            double currentRadius = touchAreaRadius;
+            double distFromStart = 0;
+
+            var meshBuilder = new MeshBuilder(false, false);
+
+            // 3. Build geometry
+            for (int i = 0; i < points.Count - 1; i++)
             {
                 Point3D startPoint = points[i];
                 Point3D endPoint = points[i + 1];
                 Vector3D direction = endPoint - startPoint;
-                double length = direction.Length;
+                double segmentHeight = direction.Length;
 
-                if (length > 0)
+                if (segmentHeight > 0.001)
                 {
-                    var meshBuilder = new MeshBuilder(false, false);
-                    meshBuilder.AddCylinder(startPoint, endPoint, trunkRadius, 16);
-                    
-                    var cylinderGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
-                    modelGroup.Children.Add(cylinderGeometry);
+                    // Linear interpolation for the next radius
+                    double nextRadius = touchAreaRadius - ((distFromStart + segmentHeight) * taperPerUnit);
+
+                    // Safety clamp
+                    if (nextRadius < trunkRadius) nextRadius = trunkRadius;
+
+                    meshBuilder.AddCone(startPoint, direction, currentRadius, nextRadius, segmentHeight, true, true, 16);
+
+                    currentRadius = nextRadius;
+                    distFromStart += segmentHeight;
                 }
             }
 
+            var geometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
+            modelGroup.Children.Add(geometry);
+
             return modelGroup;
         }
+
 
         private Model3DGroup CreateSphere(Point3D position, DiffuseMaterial material) 
         {
