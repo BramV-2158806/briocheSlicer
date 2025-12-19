@@ -55,7 +55,7 @@ namespace briocheSlicer.Slicing
                 outerLayer.AddRange(shell);
             }
             this.outerLayer = outerLayer;
-            this.outerLayer = Clipper.SimplifyPaths(this.outerLayer, 2.0, true);
+            this.outerLayer = Clipper.SimplifyPaths(this.outerLayer, 1e-9, true);
         }
 
         public PathsD? GetOuterLayer()
@@ -165,7 +165,7 @@ namespace briocheSlicer.Slicing
                 // Offset inward by one nozzle width
                 double delta = -settings.NozzleDiameter;
                 currentShell = Clipper.InflatePaths(currentShell, delta, JoinType.Round, EndType.Polygon);
-                currentShell = Clipper.SimplifyPaths(currentShell, 2.0, true);
+                currentShell = Clipper.SimplifyPaths(currentShell, 1e-9, true);
                 shells.Add(currentShell);
             }
 
@@ -243,7 +243,7 @@ namespace briocheSlicer.Slicing
 
             // Fill in the floor
             this.floor = Generate_Solid(floor);
-            this.floor = Clipper.SimplifyPaths(this.floor, 2.0, true);
+            this.floor = Clipper.SimplifyPaths(this.floor, 1e-9, true);
 
             return floor;
         } 
@@ -277,7 +277,7 @@ namespace briocheSlicer.Slicing
 
             // Fill in the roof
             this.roof = Generate_Solid(roof);
-            this.roof = Clipper.SimplifyPaths(this.roof, 2.0, true);
+            this.roof = Clipper.SimplifyPaths(this.roof, 1e-9, true);
             return roof;
         }
 
@@ -313,7 +313,7 @@ namespace briocheSlicer.Slicing
 
 
             this.support = GenerateBoundedPattern(offsettedSupportRegion, InfillPattern.Cross, layerIndex);
-            this.support = Clipper.SimplifyPaths(this.support, 2.0, false);
+            this.support = Clipper.SimplifyPaths(this.support, 1e-9, false);
             return this.support;
 
         }
