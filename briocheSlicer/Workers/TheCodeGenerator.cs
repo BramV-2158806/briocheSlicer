@@ -257,7 +257,7 @@ namespace briocheSlicer.Workers
         private void AddFloorCode(StringBuilder gcode, PathsD floorPaths, GcodeSettings settings, double offset_x, double offset_y)
         {
             gcode.AppendLine("; Floor");
-            RetractHelper retractHelper = new RetractHelper(settings.extrusion_rectrection_length);
+            RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
             for (int p = floorPaths.Count - 1; p >= 0; p--)
             {
                 var path = floorPaths[p];

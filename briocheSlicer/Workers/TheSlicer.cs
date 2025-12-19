@@ -195,8 +195,9 @@ namespace briocheSlicer.Workers
             List<BriocheTriangle> triangels = BriocheTriangle.Get_Triangles_From_Model(pureModel);
             List<BriocheSlice> slices = new List<BriocheSlice>();
 
-            int layerIdx = 0;
-            while (true)
+            //int layerIdx = 0;
+            //while (true)
+            for (int layerIdx = 0; layerIdx < layerCount; layerIdx++)
             {
                 // make sure no layers overlap (mid layer from the slides)
                 // We add 0.5 to get the middle of the layer
@@ -206,11 +207,11 @@ namespace briocheSlicer.Workers
 
                 if (slice.HasNoGeometry())
                 {
-                    break;
+                    continue;
                 }
 
                 slices.Add(slice);
-                layerIdx++;
+                //layerIdx++;
             }
 
             // Add all the slices to form the brioche model.
