@@ -7,6 +7,7 @@ using System.Windows.Media.Media3D;
 using System.Runtime.CompilerServices;
 using Clipper2Lib;
 using briocheSlicer.Gcode;
+using System.ComponentModel;
 
 namespace briocheSlicer.Slicing
 {
@@ -54,6 +55,7 @@ namespace briocheSlicer.Slicing
                 outerLayer.AddRange(shell);
             }
             this.outerLayer = outerLayer;
+            this.outerLayer = Clipper.SimplifyPaths(this.outerLayer, 2.0, true);
         }
 
         public PathsD? GetOuterLayer()
@@ -163,9 +165,10 @@ namespace briocheSlicer.Slicing
                 // Offset inward by one nozzle width
                 double delta = -settings.NozzleDiameter;
                 currentShell = Clipper.InflatePaths(currentShell, delta, JoinType.Round, EndType.Polygon);
+                currentShell = Clipper.SimplifyPaths(currentShell, 2.0, true);
                 shells.Add(currentShell);
             }
-            
+
             return shells;
         }
 
@@ -240,6 +243,7 @@ namespace briocheSlicer.Slicing
 
             // Fill in the floor
             this.floor = Generate_Solid(floor);
+            this.floor = Clipper.SimplifyPaths(this.floor, 2.0, true);
 
             return floor;
         } 
@@ -273,6 +277,7 @@ namespace briocheSlicer.Slicing
 
             // Fill in the roof
             this.roof = Generate_Solid(roof);
+            this.roof = Clipper.SimplifyPaths(this.roof, 2.0, true);
             return roof;
         }
 
@@ -308,6 +313,7 @@ namespace briocheSlicer.Slicing
 
 
             this.support = GenerateBoundedPattern(offsettedSupportRegion, InfillPattern.Cross, layerIndex);
+            this.support = Clipper.SimplifyPaths(this.support, 2.0, false);
             return this.support;
 
         }
