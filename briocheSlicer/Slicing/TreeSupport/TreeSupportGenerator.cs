@@ -1,8 +1,9 @@
 ﻿using HdbscanSharp.Distance;
 using HdbscanSharp.Runner;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Windows.Media.Media3D;
+using System.Reflection;
+using static MR.DotNet;
 
 namespace briocheSlicer.Slicing.TreeSupport
 {
@@ -40,10 +41,22 @@ namespace briocheSlicer.Slicing.TreeSupport
             Forrest forrest  = new Forrest(clusters);
             Model3DGroup trunkModels = forrest.GrowAround(pureModel);
 
-            // Add trunks to model
-            pureModel.Children.Add(trunkModels);
+            // Transform the model into mesh objects
+            Mesh trunkMesh = MeshUtils.ToMeshLib(trunkModels);
+            Mesh modelMesh = MeshUtils.ToMeshLib(pureModel);
 
-            return pureModel;
+            // Calculate the difference
+            // Trunks = trunk - model, so the trunks are trunks withouth the intersection
+            var res = Boolean(trunkMesh, modelMesh, BooleanOperation.DifferenceAB);
+            Mesh clippedTrunkMesh = res.mesh;
+
+            // Shrink the trunks so its easy to remove support
+            Mesh shrunkMesh = MeshUtils.ShrinkMesh(clippedTrunkMesh);
+
+            // Convert back to helix model.
+            Model3DGroup clippedTrunkModel = MeshUtils.ToHelixModel(shrunkMesh);
+
+            return clippedTrunkModel;
         }
 
         private List<SeedPoint> SearchForSeeds(Model3D model)
@@ -117,15 +130,7 @@ namespace briocheSlicer.Slicing.TreeSupport
                             (v0.X + v1.X + v2.X) / 3.0,
                             (v0.Y + v1.Y + v2.Y) / 3.0,
                             (v0.Z + v1.Z + v2.Z) / 3.0);
-
-                        // We move the centroid a little in the direction
-                        // Of the triangle/face normal. Making support easier to remove.
-                        Point3D offsetCentroid = new Point3D(
-                            centroid.X - triNormal.X * connectionToModelDistance,
-                            centroid.Y - triNormal.Y * connectionToModelDistance,
-                            centroid.Z - triNormal.Z * connectionToModelDistance);
-
-                        localSeeds.Add(new SeedPoint(offsetCentroid, faceSize));
+                        localSeeds.Add(new SeedPoint(centroid, faceSize));
                     }
                 });
 

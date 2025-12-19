@@ -455,16 +455,18 @@ namespace briocheSlicer
             PrintButton.IsEnabled = true;
 
             // If enabled: pre processing step to generate the tree alterd model 
-            bool useTreeSupport = TreeSupportCheckBox.IsChecked == true;
+            gcodeSettings.TreeSupportEnabled = TreeSupportCheckBox.IsChecked == true;
             Model3DGroup displayModel;
-            if (useTreeSupport)
+            if (gcodeSettings.TreeSupportEnabled)
             {
                 // altered brioche model that now includes the tree trunks
                 TreeSupportGenerator generator = new TreeSupportGenerator();
-                displayModel = generator.LetTheForrestGrow(pureModel);
-
-                // Make sure no other support is generated later
-                gcodeSettings.DisabledSupport = true;
+                Model3DGroup trunkModels = generator.LetTheForrestGrow(pureModel);
+                
+                // Create a model with both the 
+                displayModel = new Model3DGroup();
+                displayModel.Children.Add(trunkModels);
+                displayModel.Children.Add(pureModel);
             }
             else
             {

@@ -132,7 +132,7 @@ namespace briocheSlicer.Slicing
                 if (i >= this.amount_Layers - settings.NumberRoofs)
                 {
                     slice.Generate_Roof(new List<PathsD>(), true);
-                    if (!settings.DisabledSupport)
+                    if (!settings.TreeSupportEnabled)
                     {
                         slice.Generate_Support(new PathsD(), i, true);
                     }
@@ -147,7 +147,7 @@ namespace briocheSlicer.Slicing
                     slice.Generate_Roof(prev_innerPerimiters!);
 
                     // Handle support
-                    if (!settings.DisabledSupport)
+                    if (!settings.TreeSupportEnabled)
                     {
                         var prev_layer = GetLayersAbove(i, 1);
                         var prev_outerPerimeter = prev_layer[0].GetOuterShell()!;
