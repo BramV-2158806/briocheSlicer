@@ -36,7 +36,7 @@ namespace briocheSlicer.Gcode
         public double SupportSparsity { get; set; }
         public double ExtrusionRetractLength { get; set; }
 
-        public double SupportEnabled { get; set; }
+        public bool SupportEnabled { get; set; }
         public bool TreeSupportEnabled { get; set; }
 
         public GcodeSettings(
@@ -58,7 +58,8 @@ namespace briocheSlicer.Gcode
             double infillSparsity = 5,
             double supportSparsity = 8,
             double extrusionRectrectionLength = 0.2,
-            bool disableSupport = false
+            bool treeSupportEnabled = false,
+            bool supportEnabled = true
             )
         {
             NozzleDiameter = nozzleDiameter;
@@ -79,7 +80,8 @@ namespace briocheSlicer.Gcode
             InfillSparsity = infillSparsity * nozzleDiameter;
             SupportSparsity = supportSparsity * nozzleDiameter;
             ExtrusionRetractLength = extrusionRectrectionLength;
-            TreeSupportEnabled = disableSupport;
+            TreeSupportEnabled = treeSupportEnabled;
+            SupportEnabled = supportEnabled;
         }
     }
 }

@@ -91,7 +91,7 @@ namespace briocheSlicer.Slicing.TreeSupport
         /// <param name="inputMesh"></param>
         /// <param name="shrinkAmount"> Has to be a negative value.</param>
         /// <returns></returns>
-        public static Mesh ShrinkMesh(Mesh inputMesh, float shrinkAmount = -0.5f)
+        public static Mesh ShrinkMesh(Mesh inputMesh, float shrinkAmount = -0.2f)
         {
             // 1. Wrap your mesh in a MeshPart (Required for offset operations)
             // The offset engine treats the mesh as a "part" of a potential assembly.

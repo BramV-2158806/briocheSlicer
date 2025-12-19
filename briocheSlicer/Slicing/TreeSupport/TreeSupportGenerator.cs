@@ -20,8 +20,6 @@ namespace briocheSlicer.Slicing.TreeSupport
         private readonly int minClusterPoints = 1;
         private readonly int minClusterSize = 2;
 
-        private readonly float connectionToModelDistance = -0.2f;
-
         public TreeSupportGenerator() { }
 
         /// <summary>
