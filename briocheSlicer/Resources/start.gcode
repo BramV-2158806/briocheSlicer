@@ -1,5 +1,5 @@
 ; EXECUTABLE_BLOCK_START
-M73 P0 R49
+;_ESTIMATED_PRINT_TIME_
 M201 X12000 Y12000 Z1500 E5000
 M203 X500 Y500 Z30 E30
 M204 P12000 R5000 T12000
@@ -12,7 +12,7 @@ M106 P2 S0
 G392 S0
 M9833.2
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 ;===== start to heat heatbead&hotend==========
 M1002 gcode_claim_action : 2
@@ -40,7 +40,7 @@ M960 S5 P1 ; turn on logo lamp
 G90
 M220 S100 ;Reset Feedrate
 M221 S100 ;Reset Flowrate
-M73.2   R1.0 ;Reset left time magnitude
+;M73.2   R1.0 ;Reset left time magnitude
 ;M211 X0 Y0 Z0 ; turn off soft endstop to prevent protential logic problem
 
 ;====== cog noise reduction=================
@@ -76,7 +76,7 @@ M622 S1
 M623
 
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 ;===== prepare print temperature and material ==========
 M1002 gcode_claim_action : 24
@@ -120,13 +120,13 @@ G92 E0
 G1 E5 F200
 M104 S220
 G92 E0
-M73 P1 R49
+;M73 P1 R49
 G1 E-0.5 F300
 
 G1 X-28.5 F30000
-M73 P1 R48
+;M73 P1 R48
 G1 X-48.2 F3000
-M73 P2 R48
+;M73 P2 R48
 G1 X-28.5 F30000 ;wipe and shake
 G1 X-48.2 F3000
 G1 X-28.5 F30000 ;wipe and shake
@@ -139,7 +139,7 @@ M106 P1 S0
 ;===== prepare print temperature and material end =====
 
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 ;===== auto extrude cali start =========================
 M975 S1
@@ -194,7 +194,7 @@ M622 J1
         M106 P1 S0
     M623
     
-M73 P3 R48
+;M73 P3 R48
     G1 X-48.2 F3000
     M400
     M984 A0.1 E1 S1 F6.28466 H0.4
@@ -214,7 +214,7 @@ M623 ; end of "draw extrinsic para cali paint"
 ;===== auto extrude cali end ========================
 
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 M104 S170 ; prepare to wipe nozzle
 M106 S255 ; turn on fan
@@ -250,7 +250,7 @@ G1 Z4 F1200
 ;===== mech mode fast check end =======================
 
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 ;===== wipe nozzle ===============================
 M1002 gcode_claim_action : 14
@@ -275,7 +275,7 @@ G380 S3 Z-5 F1200
 G1 Z2 F1200
 G1 X110 F10000
 G380 S3 Z-5 F1200
-M73 P11 R43
+;M73 P11 R43
 G1 Z2 F1200
 G1 X112 F10000
 G380 S3 Z-5 F1200
@@ -355,7 +355,7 @@ G2 I1 J0 X2 Y0 F2000.1
 G2 I-0.75 J0 X-1.5
 G2 I1 J0 X2
 G2 I-0.75 J0 X-1.5
-M73 P12 R43
+;M73 P12 R43
 G2 I1 J0 X2
 G2 I-0.75 J0 X-1.5
 G2 I1 J0 X2
@@ -454,7 +454,7 @@ M211 R; pop softend status
 ;===== wipe nozzle end ================================
 
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 ;===== bed leveling ==================================
 M1002 judge_flag g29_before_print_flag
@@ -488,7 +488,7 @@ M623
 ;===== home after wipe mouth end =======================
 
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 G1 X108.000 Y-0.500 F30000
 G1 Z0.300 F1200
@@ -560,7 +560,7 @@ M623
 G1 Z0.2
 
 ;M400
-;M73 P1.717
+;;M73 P1.717
 
 ;========turn off light and wait extrude temperature =============
 M1002 gcode_claim_action : 0

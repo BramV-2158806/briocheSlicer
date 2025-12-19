@@ -28,6 +28,7 @@ namespace briocheSlicer.Slicing
         private PathsD? floorRegion;
         private PathsD? roofRegion;
         private PathsD? supportRegion;
+        private PathsD? infillRegion;
 
         private List<PathsD> shells;
 
@@ -80,9 +81,16 @@ namespace briocheSlicer.Slicing
 
         public void SetSupport(PathsD sup) { support = sup; }
 
+        public void SetInfill(PathsD inf) { infill = inf; }
+
         public PathsD? GetSupportRegion()
         {
             return supportRegion;
+        }
+
+        public PathsD? GetInfillRegion()
+        {
+            return infillRegion;
         }
 
         public PathsD? GetOuterShell()
@@ -101,6 +109,15 @@ namespace briocheSlicer.Slicing
                 return shells.Last();
             }
             return null;
+        }
+
+        public bool HasNoGeometry()
+        {
+            return (outerLayer == null || outerLayer.Count == 0) &&
+                   (infill == null || infill.Count == 0) &&
+                   (floor == null || floor.Count == 0) &&
+                   (roof == null || roof.Count == 0) &&
+                   (support == null || support.Count == 0);
         }
 
         /// <summary>
@@ -242,7 +259,19 @@ namespace briocheSlicer.Slicing
             this.floor = Generate_Solid(floor);
 
             return floor;
-        } 
+        }
+
+        public void Join_Floor_and_Infill()
+        {
+            var infill_overlap = 0.10 * settings.NozzleDiameter;
+            var inflation = -((settings.NozzleDiameter / 2.0) - infill_overlap);
+            var infill_inflated = Clipper.InflatePaths(this.infillRegion!, -inflation, JoinType.Round, EndType.Polygon);
+            var combinedRegion = Clipper.Union(this.floorRegion!, infill_inflated!, FillRule.NonZero);
+            this.floorRegion = combinedRegion;
+            this.infillRegion = null;
+            this.infill = null;
+            this.floor = Generate_Solid(combinedRegion);
+        }
 
         public PathsD Generate_Roof(List<PathsD> innerPerimitersUpper, bool isTopLayer = false)
         {
@@ -476,6 +505,8 @@ namespace briocheSlicer.Slicing
                 infillRegion = Clipper.Difference(infillRegion, floorRegion, FillRule.NonZero);
             if (roofRegion != null && roofRegion.Count > 0)
                 infillRegion = Clipper.Difference(infillRegion, roofRegion, FillRule.NonZero);
+
+            this.infillRegion = infillRegion;
 
             // Remove degenerate lines and points and return the infill
             this.infill = GenerateBoundedPattern(infillRegion, InfillPattern.Cross, -1);

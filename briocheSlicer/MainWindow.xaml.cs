@@ -92,7 +92,6 @@ namespace briocheSlicer
                     Model3DGroup group = ModelView(dlg.FileName);
 
                     SliceHeightSlider.IsEnabled = true;
-                    UpdateSliceHeightText(SliceHeightSlider.Value);
 
                     RedrawCurrentSlice();
                 }
@@ -122,7 +121,6 @@ namespace briocheSlicer
                     Model3DGroup group = ModelView(files[0]);
 
                     SliceHeightSlider.IsEnabled = true;
-                    UpdateSliceHeightText(SliceHeightSlider.Value);
 
                     RedrawCurrentSlice();
                 }
@@ -185,8 +183,6 @@ namespace briocheSlicer
             // Save modelbounnds for slicing plane max and min y
             modelBounds = group.Bounds;
 
-            UpdateSliceHeightText(SliceHeightSlider.Value);
-
             // Enable rotation buttons
             RotateLeftButton.IsEnabled = true;
             RotateRightButton.IsEnabled = true;
@@ -206,30 +202,17 @@ namespace briocheSlicer
             if (slicer == null || modelBounds.IsEmpty)
                 return;
 
-            // Convert slider value (0-100) to Y position within model bounds
-            double normalizedValue = e.NewValue / 100.0; // 0.0 to 1.0
-            double zPostion = modelBounds.Z + (normalizedValue * modelBounds.SizeZ);
+            int layerIndex = (int)SliceHeightSlider.Value;
+            layerIndex = Math.Clamp(layerIndex, 0, briocheModel != null ? briocheModel.amount_Layers - 1 : 0);
+
+            var slice = briocheModel?.GetSlice(layerIndex);
+            double zPosition = slice!.slice_height;
 
             // Update slicing plane position
-            slicer.Get_Slicing_Plane().Update_Slicing_Plane_Z(zPostion);
-
-            // Update text display
-            UpdateSliceHeightText(e.NewValue);
+            slicer.Get_Slicing_Plane().Update_Slicing_Plane_Z(zPosition);
 
             // Redraw the current slice
             RedrawCurrentSlice();
-        }
-
-        /// <summary>
-        /// Updates the slice height text display.
-        /// </summary>
-        /// <param name="sliderValue"></param>
-        private void UpdateSliceHeightText(double sliderValue)
-        {
-            if (SliceHeightText != null)
-            {
-                SliceHeightText.Text = $"{sliderValue:F0}%";
-            }
         }
 
         /// <summary>
@@ -457,7 +440,11 @@ namespace briocheSlicer
             briocheModel = slicer.Slice_Model(pureModel, gcodeSettings);
 
             // Reset slice plane to middle of object to show new slice with updated settings
-            SliceHeightSlider.Value = 50;
+            SliceHeightSlider.Value = briocheModel.amount_Layers / 2;
+            SliceHeightSlider.Minimum = 0;
+            SliceHeightSlider.Maximum = briocheModel.amount_Layers - 1;
+            SliceHeightSlider.TickFrequency = 1;
+            SliceHeightSlider.IsSnapToTickEnabled = true;
 
             RedrawCurrentSlice();
         }
@@ -490,6 +477,8 @@ namespace briocheSlicer
 
             // Generate G-code with current offsets
             codeGenerator.Generate(briocheModel, gcodeSettings, fullPath);
+
+            EstimatedTimeText.Text = $"Estimated Print Time: {codeGenerator.formattedEstimatedTime}";
 
             // Add positive affordance
             MessageBox.Show($"G-code saved successfully to:\n{fullPath}",
@@ -618,7 +607,6 @@ namespace briocheSlicer
             PrintButton.IsEnabled = false;
 
             View.ZoomExtents();
-            UpdateSliceHeightText(SliceHeightSlider.Value);
         }
 
         /// <summary>
@@ -630,9 +618,11 @@ namespace briocheSlicer
             if (modelBounds.IsEmpty || briocheModel == null || slicer == null) return;
 
             // Calculate the current layer index
-            double z = modelBounds.Z + (SliceHeightSlider.Value / 100.0) * modelBounds.SizeZ;
-            double? layerHeight = slicer.Get_Layer_Height()!;
-            int layerIndex = (int)Math.Floor((z - modelBounds.Z) / layerHeight.Value);
+            int layerCount = briocheModel.amount_Layers - 1;
+            int layerIndex = (int)Math.Round(SliceHeightSlider.Value);
+            layerIndex = Math.Clamp(layerIndex, 0, layerCount);
+
+            SlicePreviewHeader.Text = $"Slice Preview: {layerIndex} / {layerCount}";
 
             // Get the slice of the current layer
             var currentSlice = briocheModel.GetSlice(layerIndex);

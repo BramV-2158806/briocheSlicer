@@ -194,14 +194,23 @@ namespace briocheSlicer.Workers
             // call the slice current plane function for each layer
             List<BriocheTriangle> triangels = BriocheTriangle.Get_Triangles_From_Model(pureModel);
             List<BriocheSlice> slices = new List<BriocheSlice>();
-            for (int layerIdx = 0; layerIdx < layerCount; layerIdx++)
+
+            int layerIdx = 0;
+            while (true)
             {
                 // make sure no layers overlap (mid layer from the slides)
                 // We add 0.5 to get the middle of the layer
                 double currentZ = modelMinZ + (layerIdx + 0.5) * layerHeight.Value;
                 
                 BriocheSlice slice = Slice_Plane(triangels, currentZ, settings);
+
+                if (slice.HasNoGeometry())
+                {
+                    break;
+                }
+
                 slices.Add(slice);
+                layerIdx++;
             }
 
             // Add all the slices to form the brioche model.

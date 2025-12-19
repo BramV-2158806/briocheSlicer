@@ -26,6 +26,7 @@
                 Padding="8,5"
                 FontSize="12"
                 ToolTip="Generate G-code and save to Downloads"/>
+            <TextBlock x:Name="EstimatedTimeText" Text="Estimated Print Time: --" FontWeight="Bold" Margin="0, 10, 0, 0" HorizontalAlignment="Right"/>
         </ToolBar>
 
         <!-- Right Side Panel: Settings and Slice Height -->
@@ -130,26 +131,21 @@
                     </GroupBox>
 
                     <!-- Slice Height Section -->
-                    <GroupBox Header="Slice Preview" Padding="10" Margin="0,0,0,10" 
+                    <GroupBox Padding="10" Margin="0,0,0,10" 
                         Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <GroupBox.Header>
+                            <TextBlock x:Name="SlicePreviewHeader"
+                                FontWeight="Bold">
+                                Slice Preview: - / -
+                            </TextBlock>
+                        </GroupBox.Header>
                         <StackPanel>
-                            <TextBlock Text="Height" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,0,0,10"/>
                             <Slider x:Name="SliceHeightSlider"
                                 Orientation="Vertical"
-                                Minimum="0" 
-                                Maximum="100"
-                                Value="50"
-                                TickFrequency="10"
-                                IsSnapToTickEnabled="False"
                                 TickPlacement="BottomRight"
                                 ValueChanged="SliceHeightSlider_ValueChanged"
                                 IsEnabled="False"
                                 Height="150"/>
-                            <TextBlock x:Name="SliceHeightText"
-                                Text="--" 
-                                HorizontalAlignment="Center"
-                                Margin="0,10,0,0"
-                                FontWeight="Bold"/>
                         </StackPanel>
                     </GroupBox>
                 </StackPanel>

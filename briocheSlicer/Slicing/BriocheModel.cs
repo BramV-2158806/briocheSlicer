@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Clipper2Lib;
 using System.Runtime.InteropServices.Marshalling;
+using System.Diagnostics.Eventing.Reader;
+using System.Numerics;
 
 namespace briocheSlicer.Slicing
 {
@@ -13,6 +15,7 @@ namespace briocheSlicer.Slicing
     {
         private List<BriocheSlice> layers;
         private GcodeSettings settings;
+        private int[] layersAboveSupport;
         public readonly int amount_Layers;
         public readonly double offset_x;
         public readonly double offset_y;
@@ -127,6 +130,9 @@ namespace briocheSlicer.Slicing
             for (int i = this.amount_Layers - 1; i >= 0; i--)
             {
                 var slice = this.layers[i];
+                var prev_slice = null as BriocheSlice;
+                if (i != 0) 
+                    prev_slice = GetSlice(i - 1);
 
                 // Process top layer
                 if (i >= this.amount_Layers - settings.NumberRoofs)
@@ -150,7 +156,13 @@ namespace briocheSlicer.Slicing
                     var prev_perim_support = Clipper.Union(prev_outerPerimeter, prev_support, FillRule.EvenOdd);
                     slice.Generate_Support(prev_perim_support, i);
                 }
+
                 slice.Generate_Infill();
+                if (slice.GetFloor()!.Count != 0 && prev_slice != null && prev_slice.GetFloor()!.Count == 0 && slice.GetInfill()!.Count != 0)
+                {
+                    // Merge infill and floor
+                    slice.Join_Floor_and_Infill();
+                }
             }
         }
     }
