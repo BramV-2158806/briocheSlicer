@@ -1,6 +1,7 @@
 ﻿using briocheSlicer.Gcode;
 using briocheSlicer.Rendering;
 using briocheSlicer.Slicing;
+using briocheSlicer.Slicing.TreeSupport;
 using briocheSlicer.Workers;
 using HelixToolkit.Wpf;
 using Microsoft.Win32;
@@ -425,7 +426,7 @@ namespace briocheSlicer
             slicer.Set_Nozzle_Diameter(nozzleDiameter);
             gcodeSettings.LayerHeight = layerHeight;
             gcodeSettings.NozzleDiameter = nozzleDiameter;
-            gcodeSettings.extrusion_rectrection_length = retractionLength;
+            gcodeSettings.ExtrusionRetractLength = retractionLength;
             gcodeSettings.NumberShells = shells;
             gcodeSettings.NumberFloors = floors;
             gcodeSettings.NumberRoofs = roofs;
@@ -436,8 +437,44 @@ namespace briocheSlicer
             SliceHeightSlider.IsEnabled = true;
             PrintButton.IsEnabled = true;
 
+            // If enabled: pre processing step to generate the tree alterd model 
+            gcodeSettings.TreeSupportEnabled = TreeSupportCheckBox.IsChecked == true;
+            Model3DGroup displayModel;
+            if (gcodeSettings.TreeSupportEnabled)
+            {
+                // altered brioche model that now includes the tree trunks
+                TreeSupportGenerator generator = new TreeSupportGenerator();
+                Model3DGroup trunkModels = generator.LetTheForrestGrow(pureModel);
+                
+                // Create a model with both the 
+                displayModel = new Model3DGroup();
+                displayModel.Children.Add(trunkModels);
+                displayModel.Children.Add(pureModel);
+            }
+            else
+            {
+                displayModel = pureModel;
+            }
+
+            // Update the build plate position based on the display model bounds
+            if (buildPlate == null)
+            {
+                buildPlate = new BuildPlate(displayModel.Bounds, 256);
+            }
+            else
+            {
+                buildPlate.UpdatePosition(displayModel.Bounds);
+            }
+            displayModel.Children.Add(buildPlate.GetModel());
+
+            // Create/update the slicing plane for the display model
+            GeometryModel3D slicingPlane = slicer.Create_Slicing_plane(displayModel.Bounds);
+            displayModel.Children.Add(slicingPlane);
+
+            scene.Content = displayModel;
+
             // Slice the model
-            briocheModel = slicer.Slice_Model(pureModel, gcodeSettings);
+            briocheModel = slicer.Slice_Model(displayModel, gcodeSettings);
 
             // Reset slice plane to middle of object to show new slice with updated settings
             SliceHeightSlider.Value = briocheModel.amount_Layers / 2;

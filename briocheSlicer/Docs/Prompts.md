@@ -359,6 +359,3 @@ Boolean operations are expensive. If your `innerPerimitersLower` list contains m
 
 ***
 
-# Prompt
-
-# Asnwer

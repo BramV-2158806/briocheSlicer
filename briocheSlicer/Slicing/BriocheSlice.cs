@@ -325,17 +325,18 @@ namespace briocheSlicer.Slicing
             // Define the self supporting area of the current layer
             var outershell = GetOuterShell();
             double selfSupportDelta = Math.Min(settings.NozzleDiameter / 2.0, settings.LayerHeight);
-            var selfSupportingArea = Clipper.InflatePaths(outershell, selfSupportDelta, JoinType.Round, EndType.Polygon);
+            var selfSupportingArea = Clipper.InflatePaths(outershell!, selfSupportDelta, JoinType.Round, EndType.Polygon);
 
             // Calculate the support region of the current layer: perimiter upper layer - self supporting area
             this.supportRegion = Clipper.Difference(perimeterAndSupportUpper, selfSupportingArea, FillRule.NonZero);
 
             // We also want to add another little ofset to the support region.
             // But for nows we have a scale issue bug
-            //this.supportRegion = Clipper.InflatePaths(this.supportRegion, -0.01, JoinType.Round, EndType.Polygon);
+            double negativeOffset = -settings.NozzleDiameter;
+            var offsettedSupportRegion = Clipper.InflatePaths(this.supportRegion, negativeOffset, JoinType.Round, EndType.Polygon);
 
 
-            this.support = GenerateBoundedPattern(this.supportRegion, InfillPattern.Cross, layerIndex);
+            this.support = GenerateBoundedPattern(offsettedSupportRegion, InfillPattern.Cross, layerIndex);
             return this.support;
 
         }
@@ -369,23 +370,6 @@ namespace briocheSlicer.Slicing
             }
 
             return result;
-        }
-        // GPT
-        private PointD Rotate(PointD p, double angleRad, PointD origin)
-        {
-            double s = Math.Sin(angleRad);
-            double c = Math.Cos(angleRad);
-
-            // Translate point back to origin:
-            double x = p.x - origin.x;
-            double y = p.y - origin.y;
-
-            // Rotate
-            double xr = x * c - y * s;
-            double yr = x * s + y * c;
-
-            // Translate back:
-            return new PointD(xr + origin.x, yr + origin.y);
         }
 
         public enum InfillPattern { Horizontal, Cross}

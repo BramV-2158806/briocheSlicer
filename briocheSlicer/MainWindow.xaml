@@ -65,6 +65,13 @@
                                      ToolTip="Extrusion retraction length in millimeters"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
                                      DataObject.Pasting="DecimalTextBox_Pasting"/>
+                            <!-- Tree Support -->
+                            <CheckBox x:Name="TreeSupportCheckBox"
+                                      Content="Tree Support"
+                                      IsChecked="False"
+                                      Margin="0,8,0,8"
+                                      FontWeight="Bold"
+                                      ToolTip="Enable tree support structures"/>
                         </StackPanel>
                     </GroupBox>
 
