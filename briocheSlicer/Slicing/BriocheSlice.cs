@@ -180,7 +180,7 @@ namespace briocheSlicer.Slicing
             for (int i = 1; i < settings.NumberShells; i++)
             {
                 // Offset inward by one nozzle width
-                double delta = -settings.NozzleDiameter;
+                double delta = -(settings.NozzleDiameter - 0.01); // little overlap between shells
                 currentShell = Clipper.InflatePaths(currentShell, delta, JoinType.Round, EndType.Polygon);
                 currentShell = Clipper.SimplifyPaths(currentShell, 1e-9, true);
                 shells.Add(currentShell);
@@ -197,7 +197,7 @@ namespace briocheSlicer.Slicing
         /// <returns></returns>
         private PathsD Generate_Solid(PathsD perimiter)
         {
-            double delta = -settings.NozzleDiameter;
+            double delta = -(settings.NozzleDiameter - 0.01);
 
             var solid = new PathsD();
 

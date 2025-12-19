@@ -87,11 +87,11 @@ namespace briocheSlicer.Workers
         /// <param name="gcode"></param>
         /// <param name="paths"></param>
         /// <param name="settings"></param>
-        /// <param name="sliceHeight"></param>
+        /// <param name="extrusionHeight"></param>
         /// <param name="closeLoop"></param>
         /// <param name="hop"></param>
         /// <param name="slowDown"></param>
-        private void PrintPatshD(StringBuilder gcode, PathsD paths, GcodeSettings settings, double printSpeed, double sliceHeight, bool closeLoop = false, bool hop = false, bool slowDown = false)
+        private void PrintPatshD(StringBuilder gcode, PathsD paths, GcodeSettings settings, double printSpeed, double extrusionHeight, bool closeLoop = false, bool hop = false, bool slowDown = false)
         {
             RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
 
@@ -104,14 +104,20 @@ namespace briocheSlicer.Workers
 
                 retractHelper.Reset(gcode, currentExtrusion);
 
+                // Start hop
+                if (hop)
+                {
+                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight + 1.0}"));
+                }
+
                 // Move to start position
                 var firstPoint = path[0];
                 gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x + model!.offset_x:F3} Y{firstPoint.y + model.offset_y:F3}"));
 
-                // Start hop
+                // Stop hop
                 if (hop)
                 {
-                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{sliceHeight + 1.0}"));
+                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight}"));
                 }
 
 
@@ -125,12 +131,6 @@ namespace briocheSlicer.Workers
                     // Print line
                     gcode.AppendLine(Invariant($"G1 F{printSpeed * printMultiplier:F0} X{currentPoint.x + model.offset_x:F3} Y{currentPoint.y + model.offset_y:F3} E{extrusion:F5}"));
                     currentExtrusion = extrusion;
-                }
-
-                // Stop hop
-                if (hop)
-                {
-                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{sliceHeight}"));
                 }
 
                 // Close the loop by returning to the start point
@@ -175,16 +175,16 @@ namespace briocheSlicer.Workers
             currentExtrusion = 0;
 
             // Print perimiter
-            AddShellCode(gcode, slice, settings);
+            AddShellCode(gcode, slice, settings, extrusionHeight);
 
             // Print roofs and floors
-            AddFloorAndRoofCode(gcode, slice, settings);
+            AddFloorAndRoofCode(gcode, slice, settings, extrusionHeight);
 
             // Print infill
-            AddInfillCode(gcode, slice, settings);
+            AddInfillCode(gcode, slice, settings, extrusionHeight);
 
             // Print support
-            AddSupportCode(gcode, slice, settings, model, layerIndex);
+            AddSupportCode(gcode, slice, settings, model, layerIndex, extrusionHeight);
         }
 
         /// <summary>
@@ -194,59 +194,21 @@ namespace briocheSlicer.Workers
         /// <param name="gcode">The StringBuilder to append G-code to</param>
         /// <param name="slice">The current slice containing floor and roof paths</param>
         /// <param name="settings">G-code generation settings</param>
-        /*private void AddLayerCode(StringBuilder gcode, BriocheSlice slice, int layerIndex, GcodeSettings settings, BriocheModel model)
-        {
-            // Add some debug messaging in the gcode
-            gcode.AppendLine($"; Layer {layerIndex-1}");
-
-            // Move to layer height - keep in mind the mid layer slicing
-            // remove the mid layer slicing so we start from the bottom but we sliced 
-            // in the middle of the layer
-            double extrusionHeight = settings.LayerHeight * layerIndex;
-
-            timeEstimator.AddZMove(extrusionHeight, settings.TravelSpeed);
-
-            gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight}"));
-
-            // Reset extrusion position
-            gcode.AppendLine(Invariant($"G92 E0"));
-            currentExtrusion = 0;
-
-            // Print perimiter
-            AddShellCode(gcode, slice, settings, model.offset_x, model.offset_y);
-
-            // Print roofs and floors
-            AddFloorAndRoofCode(gcode, slice, settings, model.offset_x, model.offset_y);
-
-            // Print infill
-            AddInfillCode(gcode, slice, settings, model.offset_x, model.offset_y);
-
-            // Print support
-            AddSupportCode(gcode, slice, settings, model, layerIndex);
-        }*/
-
-        /// <summary>
-        /// Adds the G-code for floor and roof paths to the G-code StringBuilder.
-        /// Floor and roof paths are closed paths that need to be traced with extrusion.
-        /// </summary>
-        /// <param name="gcode">The StringBuilder to append G-code to</param>
-        /// <param name="slice">The current slice containing floor and roof paths</param>
-        /// <param name="settings">G-code generation settings</param>
-        private void AddFloorAndRoofCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings)
+        private void AddFloorAndRoofCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings, double extrusionHeight)
         {
             // Print floor paths
             PathsD? floorPaths = slice.GetFloor();
             if (floorPaths != null && floorPaths.Count > 0)
             {
 
-                PrintPatshD(gcode, floorPaths, settings, settings.FloorSpeed, slice.slice_height, closeLoop: true, slowDown: true, hop: settings.TreeSupportEnabled);
+                PrintPatshD(gcode, floorPaths, settings, settings.FloorSpeed, extrusionHeight, closeLoop: true, slowDown: true, hop: settings.TreeSupportEnabled);
             }
 
             // Print roof paths
             PathsD? roofPaths = slice.GetRoof();
             if (roofPaths != null && roofPaths.Count > 0)
             {
-                PrintPatshD(gcode, roofPaths, settings, settings.RoofSpeed, slice.slice_height, closeLoop: true, hop: true, slowDown: true);
+                PrintPatshD(gcode, roofPaths, settings, settings.RoofSpeed, extrusionHeight, closeLoop: true, hop: true, slowDown: true);
             }
         }
 
@@ -258,7 +220,7 @@ namespace briocheSlicer.Workers
         /// <param name="settings"></param>
         /// <param name="model"></param>
         /// <param name="layerIndex"></param>
-        private void AddSupportCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings, BriocheModel model, int layerIndex)
+        private void AddSupportCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings, BriocheModel model, int layerIndex, double extrusionHeight)
         {
             // If there are no supports to generate, return
             PathsD? supportPaths = slice.GetSupport();
@@ -276,7 +238,7 @@ namespace briocheSlicer.Workers
 
             // Process each infill line (these are open paths)
             gcode.AppendLine("; support");
-            PrintPatshD(gcode, supportPaths, settings, settings.SupportSpeed, slice.slice_height, hop: true);
+            PrintPatshD(gcode, supportPaths, settings, settings.SupportSpeed, extrusionHeight, hop: true);
 
         }
 
@@ -288,7 +250,7 @@ namespace briocheSlicer.Workers
         /// <param name="settings"></param>
         /// <param name="offset_x"></param>
         /// <param name="offset_y"></param>
-        private void AddShellCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings)
+        private void AddShellCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings, double extrusionHeight)
         {
             PathsD? shellPaths = slice.GetOuterLayer();
             if (shellPaths == null || shellPaths.Count == 0) return;
@@ -297,7 +259,7 @@ namespace briocheSlicer.Workers
 
             // Trace each shell path
             gcode.AppendLine("; schells");
-            PrintPatshD(gcode, shellPaths!, settings, settings.ShellSpeed, slice.slice_height, closeLoop: true, hop: settings.TreeSupportEnabled);
+            PrintPatshD(gcode, shellPaths!, settings, settings.ShellSpeed, extrusionHeight, closeLoop: true, hop: settings.TreeSupportEnabled);
         }
 
         /// <summary>
@@ -308,14 +270,14 @@ namespace briocheSlicer.Workers
         /// <param name="settings"></param>
         /// <param name="offset_x"></param>
         /// <param name="offset_y"></param>
-        private void AddInfillCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings)
+        private void AddInfillCode(StringBuilder gcode, BriocheSlice slice, GcodeSettings settings, double extrusionHeight)
         {
             PathsD? infillPaths = slice.GetInfill();
             if (infillPaths == null || infillPaths.Count == 0) return;
 
             // Process each infill line (these are open paths)
             gcode.AppendLine("; infill");
-            PrintPatshD(gcode, infillPaths!, settings, settings.InfillSpeed, slice.slice_height, hop: settings.TreeSupportEnabled);
+            PrintPatshD(gcode, infillPaths!, settings, settings.InfillSpeed, extrusionHeight, hop: settings.TreeSupportEnabled);
         }
 
         private void AddPrepareCode(StringBuilder gcode, BriocheModel model, GcodeSettings settings)
@@ -339,7 +301,7 @@ namespace briocheSlicer.Workers
             PathsD skirtPath = Clipper.InflatePaths(outerShell!, skirtOffset, JoinType.Round, EndType.Polygon);
 
             // Print this path once
-            PrintPatshD(gcode, skirtPath, settings, settings.PrintSpeed, sliceHeight: settings.LayerHeight, slowDown:true);
+            PrintPatshD(gcode, skirtPath, settings, settings.PrintSpeed, extrusionHeight: settings.LayerHeight, slowDown:true);
         }
     }
 }
