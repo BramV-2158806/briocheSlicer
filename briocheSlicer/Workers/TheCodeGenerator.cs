@@ -111,7 +111,7 @@ namespace briocheSlicer.Workers
                 // Start hop
                 if (hop)
                 {
-                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{sliceHeight + 0.2}"));
+                    gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{sliceHeight + 1.0}"));
                 }
 
 
