@@ -115,28 +115,16 @@ namespace briocheSlicer.Workers
                 }
 
 
-                // Extrude along the infill line
+                // Extrude along the lines
                 for (int i = 1; i < path.Count; i++)
                 {
                     var currentPoint = path[i];
                     var previousPoint = path[i - 1];
                     double extrusion = currentExtrusion + GcodeHelpers.CalculateExtrusion(previousPoint, currentPoint, settings);
 
-                    // Stop hop
-                    if (hop)
-                    {
-                        gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{sliceHeight}"));
-                    }
-
                     // Print line
                     gcode.AppendLine(Invariant($"G1 F{printSpeed * printMultiplier:F0} X{currentPoint.x + model.offset_x:F3} Y{currentPoint.y + model.offset_y:F3} E{extrusion:F5}"));
                     currentExtrusion = extrusion;
-
-                    // Start hop
-                    if (hop)
-                    {
-                        gcode.AppendLine(Invariant($"G1 F{printSpeed * 60:F0} Z{sliceHeight + 0.2}"));
-                    }
                 }
 
                 // Stop hop
@@ -251,7 +239,7 @@ namespace briocheSlicer.Workers
             if (floorPaths != null && floorPaths.Count > 0)
             {
 
-                PrintPatshD(gcode, floorPaths, settings, settings.FloorSpeed, slice.slice_height, closeLoop: true, slowDown: true);
+                PrintPatshD(gcode, floorPaths, settings, settings.FloorSpeed, slice.slice_height, closeLoop: true, slowDown: true, hop: settings.TreeSupportEnabled);
             }
 
             // Print roof paths
@@ -309,7 +297,7 @@ namespace briocheSlicer.Workers
 
             // Trace each shell path
             gcode.AppendLine("; schells");
-            PrintPatshD(gcode, shellPaths!, settings, settings.ShellSpeed, slice.slice_height, closeLoop: true);
+            PrintPatshD(gcode, shellPaths!, settings, settings.ShellSpeed, slice.slice_height, closeLoop: true, hop: settings.TreeSupportEnabled);
         }
 
         /// <summary>
@@ -327,7 +315,7 @@ namespace briocheSlicer.Workers
 
             // Process each infill line (these are open paths)
             gcode.AppendLine("; infill");
-            PrintPatshD(gcode, infillPaths!, settings, settings.InfillSpeed, slice.slice_height);
+            PrintPatshD(gcode, infillPaths!, settings, settings.InfillSpeed, slice.slice_height, hop: settings.TreeSupportEnabled);
         }
 
         private void AddPrepareCode(StringBuilder gcode, BriocheModel model, GcodeSettings settings)
@@ -338,6 +326,7 @@ namespace briocheSlicer.Workers
                 gcode.AppendLine(Invariant($"G0 F{settings.PrintSpeed * 60:F0} X0 Y2"));
                 gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X100 Y2 E10"));
                 gcode.AppendLine(Invariant($"G92 E0"));
+                return;
             }
 
             // Get the lowest outer shell

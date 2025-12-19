@@ -91,7 +91,7 @@ namespace briocheSlicer.Slicing.TreeSupport
         /// <param name="inputMesh"></param>
         /// <param name="shrinkAmount"> Has to be a negative value.</param>
         /// <returns></returns>
-        public static Mesh ShrinkMesh(Mesh inputMesh, float shrinkAmount = -0.2f)
+        public static Mesh ShrinkMesh(Mesh inputMesh, float shrinkAmount = -0.1f)
         {
             // 1. Wrap your mesh in a MeshPart (Required for offset operations)
             // The offset engine treats the mesh as a "part" of a potential assembly.
@@ -109,54 +109,6 @@ namespace briocheSlicer.Slicing.TreeSupport
             Mesh resultMesh = Offset.OffsetMesh(meshPart, shrinkAmount, offsetParams);
 
             return resultMesh;
-        }
-
-        private static Mesh CreateFloorBox(float size = 10000.0f)
-        {
-            // 1. Create simple OBJ content string for a cube
-            // Center at (0,0,-size/2) to have top face at Z=0
-            float zTop = 0;
-            float zBottom = -size;
-            float halfSize = size / 2.0f;
-
-            string objContent = $@"
-                v {-halfSize} {-halfSize} {zBottom}
-                v {halfSize} {-halfSize} {zBottom}
-                v {halfSize} {halfSize} {zBottom}
-                v {-halfSize} {halfSize} {zBottom}
-                v {-halfSize} {-halfSize} {zTop}
-                v {halfSize} {-halfSize} {zTop}
-                v {halfSize} {halfSize} {zTop}
-                v {-halfSize} {halfSize} {zTop}
-                f 1 4 3 2
-                f 5 6 7 8
-                f 1 2 6 5
-                f 2 3 7 6
-                f 3 4 8 7
-                f 4 1 5 8
-                ";
-
-            // 2. Write to temp file
-            string tempPath = Path.GetTempFileName() + ".obj";
-            File.WriteAllText(tempPath, objContent);
-
-            try
-            {
-                // 3. Load using MeshLib's robust loader
-                return MeshLoad.FromAnySupportedFormat(tempPath);
-            }
-            finally
-            {
-                // 4. Cleanup
-                if (File.Exists(tempPath)) File.Delete(tempPath);
-            }
-        }
-
-        public static Mesh Ground(Mesh input_mesh)
-        {
-            var floorBox = CreateFloorBox();
-            var result = Boolean(input_mesh, floorBox, BooleanOperation.DifferenceAB);
-            return result.mesh;
         }
 
         public static Mesh ClipMeshAtHeight(Mesh inputMesh, float minZ)
@@ -196,6 +148,27 @@ namespace briocheSlicer.Slicing.TreeSupport
             {
                 if (File.Exists(tempPath)) File.Delete(tempPath);
             }
+        }
+
+        public static Mesh LowerEntireMesh(Mesh mesh, double zDelta = -0.1)
+        {
+            // 1. Create the Translation Vector (Shift Z down by 0.1)
+            Vector3f shift = new Vector3f(0.0f, 0.0f, -0.1f);
+
+            // 2. Create an Identity Matrix (No rotation, No scale)
+            // If Matrix3f.Identity doesn't exist, create it manually:
+            // Matrix3f identity = new Matrix3f(1,0,0, 0,1,0, 0,0,1); 
+            Matrix3f identity = new Matrix3f();
+
+            // 3. Create the Affine Transform manually
+            // Constructor usually takes (Matrix3f linear, Vector3f translation)
+            AffineXf3f transform = new AffineXf3f(identity, shift);
+
+            // 4. Apply
+            mesh.Transform(transform);
+            mesh.InvalidateCaches();
+
+            return mesh;
         }
     }
 }

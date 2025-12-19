@@ -48,15 +48,18 @@ namespace briocheSlicer.Slicing.TreeSupport
             var res = Boolean(trunkMesh, modelMesh, BooleanOperation.DifferenceAB);
             Mesh clippedTrunkMesh = res.mesh;
 
+            // Shrink the trunks so its easy to remove support
+            Mesh shrunkMesh = MeshUtils.ShrinkMesh(clippedTrunkMesh);
+
+            // Move the shrunken mesh 0.1 down
+            Mesh lowerdMesh = MeshUtils.LowerEntireMesh(shrunkMesh);
+
             // Clip the trunk mesh at the model's lowest Z point
             float modelMinZ = modelMesh.BoundingBox.Min.Z;
-            Mesh floorClippedMesh = MeshUtils.ClipMeshAtHeight(clippedTrunkMesh, modelMinZ);
-
-            // Shrink the trunks so its easy to remove support
-            Mesh shrunkMesh = MeshUtils.ShrinkMesh(floorClippedMesh);
+            Mesh floorClippedMesh = MeshUtils.ClipMeshAtHeight(shrunkMesh, modelMinZ);
 
             // Convert back to helix model.
-            Model3DGroup clippedTrunkModel = MeshUtils.ToHelixModel(shrunkMesh);
+            Model3DGroup clippedTrunkModel = MeshUtils.ToHelixModel(floorClippedMesh);
 
             return clippedTrunkModel;
         }
