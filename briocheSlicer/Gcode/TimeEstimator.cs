@@ -54,7 +54,7 @@ namespace briocheSlicer.Gcode
             lastZ = z;
         }
 
-        public void AddRetract(double seconds = 0.15)
+        public void AddRetract(double seconds = 0.10)
         {
             TotalTimeSeconds += seconds;
         }
@@ -78,6 +78,11 @@ namespace briocheSlicer.Gcode
         public TimeSpan GetTimeSpan()
         {
             return TimeSpan.FromSeconds(TotalTimeSeconds);
+        }
+
+        public void AddStartCodeEstimate(double seconds = 450)
+        {
+            TotalTimeSeconds += seconds;
         }
 
         public string FormatDuration(TimeSpan t)
