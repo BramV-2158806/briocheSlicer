@@ -14,6 +14,17 @@ namespace briocheSlicer.Gcode
         public double NozzleDiameter { get; set; }
         public double LayerHeight { get; set; }
         public double PrintSpeed { get; set; }
+
+        public double InfillSpeed { get; set; }
+
+        public double RoofSpeed { get; set; }
+
+        public double FloorSpeed { get; set; }
+
+        public double ShellSpeed { get; set; }
+
+        public double SupportSpeed { get; set; }
+
         public double TravelSpeed { get; set; }
         public double ExtrusionMultiplier { get; set; }
         public double FilamentDiameter { get; set; }
@@ -24,12 +35,19 @@ namespace briocheSlicer.Gcode
         public double InfillSparsity { get; set; }
         public double SupportSparsity { get; set; }
         public double ExtrusionRetractLength { get; set; }
+
+        public double SupportEnabled { get; set; }
         public bool TreeSupportEnabled { get; set; }
 
         public GcodeSettings(
             double nozzleDiameter = 0.4,
             double layerHeight = 0.2,
             double printSpeed = 50,
+            double infillSpeed = 50,
+            double roofSpeed = 50,
+            double floorSpeed = 50,
+            double shellSpeed = 50,
+            double supportSpeed = 50,
             double travelSpeed = 150,
             double extrusionMultiplier = 0.98,
             double filamentDiameter = 1.75,
@@ -46,6 +64,11 @@ namespace briocheSlicer.Gcode
             NozzleDiameter = nozzleDiameter;
             LayerHeight = layerHeight;
             PrintSpeed = printSpeed;
+            InfillSpeed = infillSpeed;
+            RoofSpeed = roofSpeed;
+            FloorSpeed = floorSpeed;
+            ShellSpeed = shellSpeed;
+            SupportSpeed = supportSpeed;
             TravelSpeed = travelSpeed;
             ExtrusionMultiplier = extrusionMultiplier;
             FilamentDiameter = filamentDiameter;

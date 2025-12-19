@@ -453,10 +453,10 @@ namespace briocheSlicer.Workers
                     x = currentPoint.x + model.offset_x;
                     y = currentPoint.y + model.offset_y;
 
-                    timeEstimator.AddPrintXY(x, y, settings.PrintSpeed);
+                    timeEstimator.AddPrintXY(x, y, settings.SupportSpeed);
 
                     // Print line
-                    gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x + model.offset_x:F3} Y{currentPoint.y + model.offset_y:F3} E{extrusion:F5}"));
+                    gcode.AppendLine(Invariant($"G1 F{settings.SupportSpeed * 60:F0} X{currentPoint.x + model.offset_x:F3} Y{currentPoint.y + model.offset_y:F3} E{extrusion:F5}"));
                     currentExtrusion = extrusion;
 
                     z = slice.slice_height + 0.2;
@@ -512,9 +512,9 @@ namespace briocheSlicer.Workers
 
                     x = currentPoint.x + offset_x;
                     y = currentPoint.y + offset_y;
-                    timeEstimator.AddPrintXY(x, y, settings.PrintSpeed);
+                    timeEstimator.AddPrintXY(x, y, settings.ShellSpeed);
 
-                    gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x + offset_x:F3} Y{currentPoint.y + offset_y:F3} E{extrusion:F5}"));
+                    gcode.AppendLine(Invariant($"G1 F{settings.ShellSpeed * 60:F0} X{currentPoint.x + offset_x:F3} Y{currentPoint.y + offset_y:F3} E{extrusion:F5}"));
                     currentExtrusion = extrusion;
                 }
 
@@ -526,9 +526,9 @@ namespace briocheSlicer.Workers
 
                 x = startPoint.x + offset_x;
                 y = startPoint.y + offset_y;
-                timeEstimator.AddPrintXY(x, y, settings.PrintSpeed);
+                timeEstimator.AddPrintXY(x, y, settings.ShellSpeed);
 
-                gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{startPoint.x + offset_x:F3} Y{startPoint.y + offset_y:F3} E{lastExtrusion:F5}"));
+                gcode.AppendLine(Invariant($"G1 F{settings.ShellSpeed * 60:F0} X{startPoint.x + offset_x:F3} Y{startPoint.y + offset_y:F3} E{lastExtrusion:F5}"));
 
                 retractHelper.Retract(gcode, currentExtrusion);
                 timeEstimator.AddRetract();
@@ -575,9 +575,9 @@ namespace briocheSlicer.Workers
 
                     x = currentPoint.x + offset_x;
                     y = currentPoint.y + offset_y;
-                    timeEstimator.AddPrintXY(x, y, settings.PrintSpeed);
+                    timeEstimator.AddPrintXY(x, y, settings.InfillSpeed);
 
-                    gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X{currentPoint.x + offset_x:F3} Y{currentPoint.y + offset_y:F3} E{extrusion:F5}"));
+                    gcode.AppendLine(Invariant($"G1 F{settings.InfillSpeed * 60:F0} X{currentPoint.x + offset_x:F3} Y{currentPoint.y + offset_y:F3} E{extrusion:F5}"));
                     currentExtrusion = extrusion;
                 }
 

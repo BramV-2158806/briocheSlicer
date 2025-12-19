@@ -65,18 +65,31 @@
                                      ToolTip="Extrusion retraction length in millimeters"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
                                      DataObject.Pasting="DecimalTextBox_Pasting"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="Support Settings" Padding="10" Margin="0,0,0,10" 
+                    Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <!-- Support Section -->
+                            <CheckBox x:Name="SupportCheckBox"
+                                Content="Enable Support"
+                                IsChecked="True"
+                                Margin="0,8,0,8"
+                                FontWeight="Bold"
+                                ToolTip="Enable support structures"/>
                             <!-- Tree Support -->
                             <CheckBox x:Name="TreeSupportCheckBox"
-                                      Content="Tree Support"
-                                      IsChecked="False"
-                                      Margin="0,8,0,8"
-                                      FontWeight="Bold"
-                                      ToolTip="Enable tree support structures"/>
+                                Content="Tree Support"
+                                IsChecked="False"
+                                Margin="0,8,0,8"
+                                FontWeight="Bold"
+                                ToolTip="Enable tree support structures"/>
                         </StackPanel>
                     </GroupBox>
 
                     <!-- Perimeter Section -->
-                    <GroupBox Header="Perimeter" Padding="10" Margin="0,0,0,10" 
+                    <GroupBox Header="Perimeter Settings" Padding="10" Margin="0,0,0,10" 
                         Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
                         <StackPanel>
                             <!-- Number of Shells -->
@@ -88,33 +101,70 @@
                                 PreviewTextInput="ShellsTextBox_PreviewTextInput"
                                 TextChanged="ShellsTextBox_TextChanged"
                                 ToolTip="Number of perimeter shells (minimum 1)"/>
+                            <TextBlock Text="Shell Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ShellSpeedTextBox"
+                                     Text="50"
+                                     Padding="5,3"
+                                     Margin="0,0,0,8"
+                                     ToolTip="Speed of printing the perimeter shells in millimeters per second"
+                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
+
                         </StackPanel>
                     </GroupBox>
 
-                    <!-- Infill Section -->
-                    <GroupBox Header="Infill" Padding="10" Margin="0,0,0,10" 
-                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                    <!-- Roof Section -->
+                    <GroupBox Header="Roof Settings" Padding="10" Margin="0,0,0,10" 
+                    Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
                         <StackPanel>
-                            <!-- Number of Floors -->
-                            <TextBlock Text="Floors:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="FloorsTextBox" 
-                                Text="2" 
-                                Padding="5,3"
-                                Margin="0,0,0,8"
-                                PreviewTextInput="FloorsTextBox_PreviewTextInput"
-                                TextChanged="FloorsTextBox_TextChanged"
-                                ToolTip="Number of floor layers (minimum 0)"/>
-                            
                             <!-- Number of Roofs -->
-                            <TextBlock Text="Roofs:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="RoofsTextBox" 
-                                Text="2" 
+                            <TextBlock Text="Amount of Roofs:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="RoofAmountTextBox" 
+                                Text="3" 
                                 Padding="5,3"
                                 Margin="0,0,0,8"
                                 PreviewTextInput="RoofsTextBox_PreviewTextInput"
                                 TextChanged="RoofsTextBox_TextChanged"
-                                ToolTip="Number of roof layers (minimum 0)"/>
-                            
+                                ToolTip="Number of roofs (minimum 1)"/>
+                            <TextBlock Text="Roof Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="RoofSpeedTextBox"
+                                 Text="50"
+                                 Padding="5,3"
+                                 Margin="0,0,0,8"
+                                 ToolTip="Speed of printing the roof sections in millimeters per second"
+                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                 DataObject.Pasting="DecimalTextBox_Pasting"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Floor Section -->
+                    <GroupBox Header="Floor Settings" Padding="10" Margin="0,0,0,10" 
+                    Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <!-- Number of Shells -->
+                            <TextBlock Text="Amount of Floors:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="FloorAmountTextBox" 
+                                Text="3" 
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                PreviewTextInput="FloorsTextBox_PreviewTextInput"
+                                TextChanged="FloorsTextBox_TextChanged"
+                                ToolTip="Number of floors (minimum 1)"/>
+                            <TextBlock Text="Floor Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="FloorSpeedTextBox"
+                                Text="50"
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                ToolTip="Speed of printing the floor sections in millimeters per second"
+                                PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Infill and Support Settings -->
+                    <GroupBox Header="Infill" Padding="10" Margin="0,0,0,10" 
+                        Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
                             <!-- Infill Sparsity -->
                             <TextBlock Text="Infill Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="InfillSparsityTextBox"
@@ -124,16 +174,35 @@
                                      ToolTip="Infill sparsity factor (multiplied by nozzle diameter)"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
                                      DataObject.Pasting="DecimalTextBox_Pasting"/>
-                            
+
+                            <TextBlock Text="Infill Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="InfillSpeedTextBox"
+                                Text="50"
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                ToolTip="Speed of printing the infill sections in millimeters per second"
+                                PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+
                             <!-- Support Sparsity -->
                             <TextBlock Text="Support Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="SupportSparsityTextBox"
-                                     Text="8"
-                                     Padding="5,3"
-                                     Margin="0,0,0,8"
-                                     ToolTip="Support sparsity factor (multiplied by nozzle diameter)"
-                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                Text="8"
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                ToolTip="Support sparsity factor (multiplied by nozzle diameter)"
+                                PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+
+                            <TextBlock Text="Support Speed:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="SupportSpeedTextBox"
+                                 Text="50"
+                                 Padding="5,3"
+                                 Margin="0,0,0,8"
+                                 ToolTip="Speed of printing the support sections in millimeters per second"
+                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                 DataObject.Pasting="DecimalTextBox_Pasting"/>
+                            
                         </StackPanel>
                     </GroupBox>
 

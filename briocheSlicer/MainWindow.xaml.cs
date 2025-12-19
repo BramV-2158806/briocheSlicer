@@ -216,6 +216,8 @@ namespace briocheSlicer
             RedrawCurrentSlice();
         }
 
+        
+
         /// <summary>
         /// Validates that only numeric input is allowed for the shells textbox.
         /// </summary>
@@ -380,7 +382,7 @@ namespace briocheSlicer
             }
 
             // Validate number of floors input
-            if (!int.TryParse(FloorsTextBox.Text, out int floors) || floors < 0)
+            if (!int.TryParse(FloorAmountTextBox.Text, out int floors) || floors < 0)
             {
                 MessageBox.Show("Please enter a valid number of floors (must be at least 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -388,7 +390,7 @@ namespace briocheSlicer
             }
 
             // Validate number of roofs input
-            if (!int.TryParse(RoofsTextBox.Text, out int roofs) || roofs < 0)
+            if (!int.TryParse(RoofAmountTextBox.Text, out int roofs) || roofs < 0)
             {
                 MessageBox.Show("Please enter a valid number of roofs (must be at least 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -407,6 +409,52 @@ namespace briocheSlicer
             // Validate support sparsity input
             string supportSparsityText = Normalize(SupportSparsityTextBox.Text);
             if (!double.TryParse(supportSparsityText, NumberStyles.Float, CultureInfo.InvariantCulture, out double supportSparsity) || supportSparsity <= 0)
+            {
+                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Speed settings
+            // Validate shell speed input
+            string shellSpeedText = Normalize(ShellSpeedTextBox.Text);
+            if (!double.TryParse(shellSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double shellspeed) || shellspeed <= 0)
+            {
+                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Validate roof speed input
+            string roofSpeedText = Normalize(RoofSpeedTextBox.Text);
+            if (!double.TryParse(roofSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double roofspeed) || roofspeed <= 0)
+            {
+                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Validate floor speed input
+            string floorSpeedText = Normalize(FloorSpeedTextBox.Text);
+            if (!double.TryParse(floorSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double floorspeed) || floorspeed <= 0)
+            {
+                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Validate infill speed input
+            string infillSpeedText = Normalize(InfillSpeedTextBox.Text);
+            if (!double.TryParse(infillSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double infillspeed) || infillspeed <= 0)
+            {
+                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                                "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Validate support sparsity input
+            string supportSpeedText = Normalize(SupportSpeedTextBox.Text);
+            if (!double.TryParse(supportSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double supportspeed) || supportspeed <= 0)
             {
                 MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -432,6 +480,12 @@ namespace briocheSlicer
             gcodeSettings.NumberRoofs = roofs;
             gcodeSettings.InfillSparsity = infillSparsity * nozzleDiameter;
             gcodeSettings.SupportSparsity = supportSparsity * nozzleDiameter;
+            gcodeSettings.ShellSpeed = shellspeed;
+            gcodeSettings.RoofSpeed = roofspeed;
+            gcodeSettings.FloorSpeed = floorspeed;
+            gcodeSettings.InfillSpeed = infillspeed;
+            gcodeSettings.SupportSpeed = supportspeed;
+            gcodeSettings.SupportEnabled = SupportCheckBox.IsChecked == true ? 1 : 0;
 
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
