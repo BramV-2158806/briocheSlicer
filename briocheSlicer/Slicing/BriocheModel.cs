@@ -153,7 +153,7 @@ namespace briocheSlicer.Slicing
                     slice.Generate_Roof(prev_innerPerimiters!);
 
                     // Handle support
-                    if (!settings.TreeSupportEnabled)
+                    if (!settings.TreeSupportEnabled && settings.SupportEnabled)
                     {
                         var prev_layer = GetLayersAbove(i, 1);
                         var prev_outerPerimeter = prev_layer[0].GetOuterShell()!;

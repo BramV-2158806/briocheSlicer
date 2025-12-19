@@ -81,6 +81,7 @@
                             <!-- Tree Support -->
                             <CheckBox x:Name="TreeSupportCheckBox"
                                 Content="Tree Support"
+                                IsEnabled="{Binding IsChecked, ElementName=SupportCheckBox}"
                                 IsChecked="False"
                                 Margin="0,8,0,8"
                                 FontWeight="Bold"

@@ -485,7 +485,7 @@ namespace briocheSlicer
             gcodeSettings.FloorSpeed = floorspeed;
             gcodeSettings.InfillSpeed = infillspeed;
             gcodeSettings.SupportSpeed = supportspeed;
-            gcodeSettings.SupportEnabled = SupportCheckBox.IsChecked == true ? true : false;
+            gcodeSettings.SupportEnabled = SupportCheckBox.IsChecked == true;
 
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
