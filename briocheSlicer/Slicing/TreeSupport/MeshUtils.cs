@@ -110,5 +110,53 @@ namespace briocheSlicer.Slicing.TreeSupport
 
             return resultMesh;
         }
+
+    private static Mesh CreateFloorBox(float size = 10000.0f)
+        {
+            // 1. Create simple OBJ content string for a cube
+            // Center at (0,0,-size/2) to have top face at Z=0
+            float zTop = 0;
+            float zBottom = -size;
+            float halfSize = size / 2.0f;
+
+            string objContent = $@"
+                v {-halfSize} {-halfSize} {zBottom}
+                v {halfSize} {-halfSize} {zBottom}
+                v {halfSize} {halfSize} {zBottom}
+                v {-halfSize} {halfSize} {zBottom}
+                v {-halfSize} {-halfSize} {zTop}
+                v {halfSize} {-halfSize} {zTop}
+                v {halfSize} {halfSize} {zTop}
+                v {-halfSize} {halfSize} {zTop}
+                f 1 4 3 2
+                f 5 6 7 8
+                f 1 2 6 5
+                f 2 3 7 6
+                f 3 4 8 7
+                f 4 1 5 8
+                ";
+
+            // 2. Write to temp file
+            string tempPath = Path.GetTempFileName() + ".obj";
+            File.WriteAllText(tempPath, objContent);
+
+            try
+            {
+                // 3. Load using MeshLib's robust loader
+                return MeshLoad.FromAnySupportedFormat(tempPath);
+            }
+            finally
+            {
+                // 4. Cleanup
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
+        }
+
+        public static Mesh Ground(Mesh input_mesh)
+        {
+            var floorBox = CreateFloorBox();
+            var result = Boolean(input_mesh, floorBox, BooleanOperation.DifferenceAB);
+            return result.mesh;
+        }
     }
 }

@@ -151,11 +151,6 @@ namespace briocheSlicer.Slicing.TreeSupport
             {
                 return CreateTrunkGroup(material);
             }
-            else if (points.Count == 1)
-            {
-                // Just a single point - create a small sphere
-                return CreateSphere(points[0], material);
-            }
             return new Model3DGroup();
         }
 
@@ -205,17 +200,6 @@ namespace briocheSlicer.Slicing.TreeSupport
             var geometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
             modelGroup.Children.Add(geometry);
 
-            return modelGroup;
-        }
-
-
-        private Model3DGroup CreateSphere(Point3D position, DiffuseMaterial material) 
-        {
-            var modelGroup = new Model3DGroup();
-            var meshBuilder = new MeshBuilder(false, false);
-            meshBuilder.AddSphere(position, trunkRadius / 2, 16, 16);
-            var sphereGeometry = new GeometryModel3D(meshBuilder.ToMesh(), material);
-            modelGroup.Children.Add(sphereGeometry);
             return modelGroup;
         }
 
