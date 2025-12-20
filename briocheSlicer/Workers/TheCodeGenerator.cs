@@ -51,11 +51,6 @@ namespace briocheSlicer.Workers
             // skirt to calibrate extrusion and clean nozzle
             AddPrepareCode(gcode, model, settings);
 
-            // Add a friendly message
-            gcode.AppendLine($"; Sliced by BriocheSlicer on {DateTime.Now}. Would you like a slice of brioche?");
-            gcode.AppendLine($"; Layer height: {settings.LayerHeight}mm");
-            gcode.AppendLine();
-
             // Process the model
             for (int i = 0; i < model.amount_Layers; i++)
             {
@@ -92,14 +87,17 @@ namespace briocheSlicer.Workers
         /// <param name="settings"></param>
         /// <param name="extrusionHeight"></param>
         /// <param name="closeLoop"></param>
-        /// <param name="hop"></param>
+        /// <param name="hopEnabled"></param>
         /// <param name="slowDown"></param>
-        private void PrintPatshD(StringBuilder gcode, PathsD paths, GcodeSettings settings, double printSpeed, double extrusionHeight, bool closeLoop = false, bool hop = false, bool slowDown = false)
+        private void PrintPatshD(StringBuilder gcode, PathsD paths, GcodeSettings settings, double printSpeed, double extrusionHeight, bool closeLoop = false, bool hopEnabled = false, bool slowDown = false)
         {
             RetractHelper retractHelper = new RetractHelper(settings.ExtrusionRetractLength);
 
             double printMultiplier = 60;
             if (slowDown) printMultiplier = 30;
+
+            double? prevX = null;
+            double? prevY = null;
 
             foreach (var path in paths)
             {
@@ -107,23 +105,26 @@ namespace briocheSlicer.Workers
 
                 retractHelper.Reset(gcode, currentExtrusion);
 
+                // Calculate the position of the first point
+                var firstPoint = path[0];
+                double firstX = firstPoint.x + model!.offset_x;
+                double firstY = firstPoint.y + model.offset_y;
+
+                timeEstimator.AddTravelXY(firstX, firstY, settings.TravelSpeed);
+
+                bool isHopNeeded = IsHopNeeded(firstX, firstY, prevX, prevY);
+
                 // Start hop
-                if (hop)
+                if (hopEnabled && isHopNeeded)
                 {
                     gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight + 1.0}"));
                 }
 
                 // Move to start position
-                var firstPoint = path[0];
-                double x = firstPoint.x + model!.offset_x;
-                double y = firstPoint.y + model.offset_y;
-
-                timeEstimator.AddTravelXY(x, y, settings.TravelSpeed);
-
-                gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstPoint.x + model!.offset_x:F3} Y{firstPoint.y + model.offset_y:F3}"));
+                gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstX:F3} Y{firstY:F3}"));
 
                 // Stop hop
-                if (hop)
+                if (hopEnabled && isHopNeeded)
                 {
                     gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight}"));
                     timeEstimator.AddZMove(extrusionHeight + 1, settings.TravelSpeed);
@@ -138,9 +139,9 @@ namespace briocheSlicer.Workers
                     double extrusion = currentExtrusion + GcodeHelpers.CalculateExtrusion(previousPoint, currentPoint, settings);
 
                     // Timing estimation
-                    x = currentPoint.x + model!.offset_x;
-                    y = currentPoint.y + model.offset_y;
-                    timeEstimator.AddPrintXY(x, y, printSpeed);
+                    firstX = currentPoint.x + model!.offset_x;
+                    firstY = currentPoint.y + model.offset_y;
+                    timeEstimator.AddPrintXY(firstX, firstY, printSpeed);
 
                     // Print line
                     gcode.AppendLine(Invariant($"G1 F{printSpeed * printMultiplier:F0} X{currentPoint.x + model.offset_x:F3} Y{currentPoint.y + model.offset_y:F3} E{extrusion:F5}"));
@@ -156,9 +157,9 @@ namespace briocheSlicer.Workers
                     currentExtrusion = lastExtrusion;
 
                     // Timing estimation
-                    x = startPoint.x + model!.offset_x;
-                    y = startPoint.y + model.offset_y;
-                    timeEstimator.AddPrintXY(x, y, printSpeed);
+                    firstX = startPoint.x + model!.offset_x;
+                    firstY = startPoint.y + model.offset_y;
+                    timeEstimator.AddPrintXY(firstX, firstY, printSpeed);
 
                     gcode.AppendLine(Invariant($"G1 F{printSpeed * printMultiplier:F0} X{startPoint.x + model.offset_x:F3} Y{startPoint.y + model.offset_y:F3} E{lastExtrusion:F5}"));
                 }
@@ -166,6 +167,21 @@ namespace briocheSlicer.Workers
                 retractHelper.Retract(gcode, currentExtrusion);
                 timeEstimator.AddRetract();
             }
+        }
+
+        private bool IsHopNeeded(double firstNewX, double firstNewY, double? lastPrevX, double? lastPrevY)
+        {
+            // If no prev yet, we dont know so safer to hop
+            if (lastPrevX == null || lastPrevY == null) return true;
+
+            // Calculate the difference between new and prev point (euclidian)
+            double dx = firstNewX - lastPrevX.Value;
+            double dy = firstNewY - lastPrevY.Value;
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+
+            // If distance is greater then 1mm a hop is needed
+            // if not we can assume its just the 'same' slice
+            return distance > 1.0;
         }
 
         /// <summary>
@@ -222,14 +238,14 @@ namespace briocheSlicer.Workers
             if (floorPaths != null && floorPaths.Count > 0)
             {
 
-                PrintPatshD(gcode, floorPaths, settings, settings.FloorSpeed, extrusionHeight, closeLoop: true, slowDown: true, hop: settings.TreeSupportEnabled);
+                PrintPatshD(gcode, floorPaths, settings, settings.FloorSpeed, extrusionHeight, closeLoop: true, slowDown: true, hopEnabled: settings.TreeSupportEnabled);
             }
 
             // Print roof paths
             PathsD? roofPaths = slice.GetRoof();
             if (roofPaths != null && roofPaths.Count > 0)
             {
-                PrintPatshD(gcode, roofPaths, settings, settings.RoofSpeed, extrusionHeight, closeLoop: true, hop: true, slowDown: true);
+                PrintPatshD(gcode, roofPaths, settings, settings.RoofSpeed, extrusionHeight, closeLoop: true, hopEnabled: true, slowDown: true);
             }
         }
 
@@ -259,7 +275,7 @@ namespace briocheSlicer.Workers
 
             // Process each infill line (these are open paths)
             gcode.AppendLine("; support");
-            PrintPatshD(gcode, supportPaths, settings, settings.SupportSpeed, extrusionHeight, hop: true);
+            PrintPatshD(gcode, supportPaths, settings, settings.SupportSpeed, extrusionHeight, hopEnabled: true);
 
         }
 
@@ -280,7 +296,7 @@ namespace briocheSlicer.Workers
 
             // Trace each shell path
             gcode.AppendLine("; schells");
-            PrintPatshD(gcode, shellPaths!, settings, settings.ShellSpeed, extrusionHeight, closeLoop: true, hop: settings.TreeSupportEnabled);
+            PrintPatshD(gcode, shellPaths!, settings, settings.ShellSpeed, extrusionHeight, closeLoop: true, hopEnabled: settings.TreeSupportEnabled);
         }
 
         /// <summary>
@@ -298,7 +314,7 @@ namespace briocheSlicer.Workers
 
             // Process each infill line (these are open paths)
             gcode.AppendLine("; infill");
-            PrintPatshD(gcode, infillPaths!, settings, settings.InfillSpeed, extrusionHeight, hop: settings.TreeSupportEnabled);
+            PrintPatshD(gcode, infillPaths!, settings, settings.InfillSpeed, extrusionHeight, hopEnabled: settings.TreeSupportEnabled);
         }
 
         private void AddPrepareCode(StringBuilder gcode, BriocheModel model, GcodeSettings settings)
@@ -309,20 +325,28 @@ namespace briocheSlicer.Workers
                 gcode.AppendLine(Invariant($"G0 F{settings.PrintSpeed * 60:F0} X0 Y2"));
                 gcode.AppendLine(Invariant($"G1 F{settings.PrintSpeed * 60:F0} X100 Y2 E10"));
                 gcode.AppendLine(Invariant($"G92 E0"));
-                return;
+            }
+            else
+            {
+                // Get the lowest outer shell
+                var bottomLayer = model.GetSlice(0);
+                PathsD? outerShell = bottomLayer.GetOuterShell();
+
+                if (outerShell != null)
+                {
+                    // Inflate it by a factor of the nozzle diameter
+                    double skirtOffset = 10 * settings.NozzleDiameter;
+                    PathsD skirtPath = Clipper.InflatePaths(outerShell!, skirtOffset, JoinType.Round, EndType.Polygon);
+
+                    // Print this path once
+                    PrintPatshD(gcode, skirtPath, settings, settings.PrintSpeed, extrusionHeight: settings.LayerHeight, slowDown: true);
+                }
             }
 
-            // Get the lowest outer shell
-            var bottomLayer = model.GetSlice(0);
-            PathsD? outerShell = bottomLayer.GetOuterShell();
-            if (outerShell == null) return;
-
-            // Inflate it by a factor of the nozzle diameter
-            double skirtOffset = 10 * settings.NozzleDiameter;
-            PathsD skirtPath = Clipper.InflatePaths(outerShell!, skirtOffset, JoinType.Round, EndType.Polygon);
-
-            // Print this path once
-            PrintPatshD(gcode, skirtPath, settings, settings.PrintSpeed, extrusionHeight: settings.LayerHeight, slowDown:true);
+            // Add a friendly message
+            gcode.AppendLine($"; Sliced by BriocheSlicer on {DateTime.Now}. Would you like a slice of brioche?");
+            gcode.AppendLine($"; Layer height: {settings.LayerHeight}mm");
+            gcode.AppendLine();
         }
     }
 }
