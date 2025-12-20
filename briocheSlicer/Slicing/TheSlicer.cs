@@ -1,5 +1,4 @@
-﻿using briocheSlicer.Slicing;
-using HelixToolkit.Wpf;
+﻿using HelixToolkit.Wpf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,7 @@ using System.Windows.Media.Media3D;
 using System.Diagnostics;
 using briocheSlicer.Gcode;
 
-namespace briocheSlicer.Workers
+namespace briocheSlicer.Slicing
 {
     internal partial class TheSlicer
     {

@@ -31,8 +31,4 @@
     <EmbeddedResource Include="Resources\end.gcode" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Docs\Prompts\" />
-  </ItemGroup>
-
 </Project>

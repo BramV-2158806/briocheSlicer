@@ -1,17 +1,10 @@
-﻿using briocheSlicer.Gcode;
-using briocheSlicer.Slicing;
+﻿using briocheSlicer.Slicing;
 using Clipper2Lib;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media.Media3D;
 using static System.FormattableString; // comma to point string representation
 
-namespace briocheSlicer.Workers
+namespace briocheSlicer.Gcode
 {
     internal class TheCodeGenerator
     {
