@@ -19,7 +19,6 @@ namespace briocheSlicer.Slicing
         private int slicingPlaneOverhang;
 
         private double? layerHeight;
-        private double? nozzleDiameter;
 
         public TheSlicer()
         {
@@ -29,10 +28,6 @@ namespace briocheSlicer.Slicing
         public void Set_Layer_Height(double height)
         {
             layerHeight = height;
-        }
-        public void Set_Nozzle_Diameter(double diameter)
-        {
-            nozzleDiameter = diameter;
         }
 
         public double? Get_Layer_Height()
@@ -190,7 +185,7 @@ namespace briocheSlicer.Slicing
             // Rather have a layer extra then miss a detail
             int layerCount = (int)Math.Ceiling(modelBounds.SizeZ / layerHeight.Value);
 
-            // call the slice current plane function for each layer
+            // Collect the triangles that makeup the model.
             List<BriocheTriangle> triangels = BriocheTriangle.Get_Triangles_From_Model(pureModel);
             List<BriocheSlice> slices = new List<BriocheSlice>();
 
@@ -202,6 +197,7 @@ namespace briocheSlicer.Slicing
                 // We add 0.5 to get the middle of the layer
                 double currentZ = modelMinZ + (layerIdx + 0.5) * layerHeight.Value;
                 
+                // Slice the current Z value
                 BriocheSlice slice = Slice_Plane(triangels, currentZ, settings);
 
                 if (slice.HasNoGeometry())
@@ -210,7 +206,6 @@ namespace briocheSlicer.Slicing
                 }
 
                 slices.Add(slice);
-                //layerIdx++;
             }
 
             // Add all the slices to form the brioche model.
