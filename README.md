@@ -77,6 +77,7 @@ which calls _TheCodeGenerator.AddLayerCode()_ for each layer of the model.
 **Interesting functions are**:
 - TheCodeGenerator.Generate()
 - TheCodeGenerator.AddLayerCode()
+- TheCodeGenerator.PrintPatshD()
 
 ## Rendering/
 This directory hosts some helper classes and functions to create the 2D slice visualisation.
