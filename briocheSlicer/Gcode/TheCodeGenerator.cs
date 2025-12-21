@@ -110,10 +110,12 @@ namespace briocheSlicer.Gcode
                 // Start hop
                 if (hopEnabled && isHopNeeded)
                 {
+                    timeEstimator.AddZMove(extrusionHeight + 1, settings.TravelSpeed);
                     gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight + 1.0}"));
                 }
 
                 // Move to start position
+                timeEstimator.AddTravelXY(firstX, firstY, settings.TravelSpeed);
                 gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} X{firstX:F3} Y{firstY:F3}"));
 
                 // Stop hop

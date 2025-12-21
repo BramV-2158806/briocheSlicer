@@ -717,17 +717,17 @@ namespace briocheSlicer
             var currentSlice = briocheModel.GetSlice(layerIndex);
             if (currentSlice == null) return;
 
-            var slice = currentSlice.GetOuterLayer();
+            var shells = currentSlice.GetOuterLayer();
             var infill = currentSlice.GetInfill();
             var roof = currentSlice.GetRoof();
             var floor = currentSlice.GetFloor();
             var support = currentSlice.GetSupport();
 
             // Draw the 2D slice
-            if (slice != null && slice.Count > 0)
+            if (shells != null && shells.Count > 0)
             {
-                // Show slice paths and infill
-                SliceRenderer.DrawSliceAutoFit(SliceCanvas, slice, infill, floor, roof, support);
+                // Show Shells, Infill, Floor, Roof and Support 
+                SliceRenderer.DrawSliceAutoFit(SliceCanvas, shells, infill, floor, roof, support);
             }
             else
             {
