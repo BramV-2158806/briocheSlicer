@@ -252,26 +252,13 @@ namespace briocheSlicer
                 }
 
                 // If the number is less than 0, show validation error
-                if (value < 0)
+                if (value <= 0)
                 {
                     textBox.Background = Brushes.LightPink;
                 }
                 else
                 {
                     textBox.Background = Brushes.White;
-                }
-
-                if ((string)textBox.Tag == "GREATER_ZERO")
-                {
-                    if (value <= 0)
-                    {
-                        textBox.Background = Brushes.LightPink;
-                        return;
-                    }
-                    else
-                    {
-                        textBox.Background = Brushes.White;
-                    }
                 }
             }
         }
@@ -822,7 +809,7 @@ namespace briocheSlicer
                 return;
             }
 
-            if (value < 0)
+            if (value <= 0)
             {
                 textBox.Background = Brushes.LightPink;
                 return;
@@ -830,19 +817,6 @@ namespace briocheSlicer
             else
             {
                 textBox.Background = Brushes.White;
-            }
-
-            if ((string)textBox.Tag == "GREATER_ZERO")
-            {
-                if (value <= 0)
-                {
-                    textBox.Background = Brushes.LightPink;
-                    return;
-                }
-                else
-                {
-                    textBox.Background = Brushes.White;
-                }
             }
         }
 
