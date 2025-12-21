@@ -20,13 +20,6 @@ namespace briocheSlicer
     /// </summary>
     public partial class MainWindow : Window
     {
-        public enum InfillPattern
-        {
-            Rectilinear,
-            Horizontal,
-            Honeycomb
-        }
-
         private TheSlicer slicer;
         private TheCodeGenerator codeGenerator;
 
