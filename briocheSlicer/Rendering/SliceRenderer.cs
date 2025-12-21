@@ -13,20 +13,16 @@ namespace briocheSlicer.Rendering
 {
     internal static class SliceRenderer
     {
-        public static void DrawSliceAutoFit
-            (
-            Canvas canvas, PathsD? slice, PathsD? infill = null,
-            PathsD? floor = null, PathsD? roof = null,
-            PathsD? support = null, double strokePx = 1.5, double marginPercent = 0.06
-            )
+        public static void DrawSliceAutoFit( Canvas canvas, PathsD? slice, PathsD? infill = null, PathsD? floor = null, PathsD? roof = null, PathsD? support = null, double strokePx = 1.5, double marginPercent = 0.06)
         {
             canvas.Children.Clear();
             Console.WriteLine($"Support path count: {support?.Count ?? 0}");
             if ((slice == null || slice.Count == 0) && 
-        (infill == null || infill.Count == 0) && 
-        (floor == null || floor.Count == 0) && 
-        (roof == null || roof.Count == 0) &&
-        (support == null || support.Count == 0)) return;
+                (infill == null || infill.Count == 0) && 
+                (floor == null || floor.Count == 0) && 
+                (roof == null || roof.Count == 0) &&
+                (support == null || support.Count == 0)) 
+                return;
 
             var bounds = ComputeBoundsFromPathsD(slice, infill, floor, roof, support);
 
@@ -328,50 +324,6 @@ namespace briocheSlicer.Rendering
                 if (p.X < minX) minX = p.X; if (p.Y < minY) minY = p.Y;
                 if (p.X > maxX) maxX = p.X; if (p.Y > maxY) maxY = p.Y;
             }
-            double w = Math.Max(1e-9, maxX - minX);
-            double h = Math.Max(1e-9, maxY - minY);
-            return new Rect(minX, minY, w, h);
-        }
-
-        private static Rect ComputeBoundsFromPathsD(PathsD? slice, PathsD? infill)
-        {
-            double minX = double.PositiveInfinity, minY = double.PositiveInfinity;
-            double maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
-
-            bool hasPoints = false;
-
-            if (slice != null)
-            {
-                foreach (var path in slice)
-                {
-                    foreach (var pt in path)
-                    {
-                        hasPoints = true;
-                        if (pt.x < minX) minX = pt.x;
-                        if (pt.y < minY) minY = pt.y;
-                        if (pt.x > maxX) maxX = pt.x;
-                        if (pt.y > maxY) maxY = pt.y;
-                    }
-                }
-            }
-
-            if (infill != null)
-            {
-                foreach (var path in infill)
-                {
-                    foreach (var pt in path)
-                    {
-                        hasPoints = true;
-                        if (pt.x < minX) minX = pt.x;
-                        if (pt.y < minY) minY = pt.y;
-                        if (pt.x > maxX) maxX = pt.x;
-                        if (pt.y > maxY) maxY = pt.y;
-                    }
-                }
-            }
-
-            if (!hasPoints) return Rect.Empty;
-
             double w = Math.Max(1e-9, maxX - minX);
             double h = Math.Max(1e-9, maxY - minY);
             return new Rect(minX, minY, w, h);
