@@ -40,31 +40,37 @@
                             <!-- Layer Height -->
                             <TextBlock Text="Layer Height (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="LayerHeightTextBox"
+                                     Tag="GREATER_ZERO"
                                      Text="0,2"
                                      Padding="5,3"
                                      Margin="0,0,0,8"
                                      ToolTip="Layer height in millimeters"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                     TextChanged="DecimalTextBox_TextChanged"
+                                     LostFocus="DecimalTextBox_LostFocus"/>
 
                             <!-- Nozzle Diameter -->
                             <TextBlock Text="Nozzle Diameter (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="NozzleDiameterTextBox"
+                                     Tag="GREATER_ZERO"
                                      Text="0,4"
                                      Padding="5,3"
                                      Margin="0,0,0,8"
                                      ToolTip="Nozzle diameter in millimeters"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                     TextChanged="DecimalTextBox_TextChanged"
+                                     LostFocus="DecimalTextBox_LostFocus"/>
                             <!-- Extrusion retraction Length-->
                             <TextBlock Text="Extursion Retraction Length (mm):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="ExtrusionRetractionTextBox"
+                                     Tag="GREATER_ZERO"
                                      Text="0,2"
                                      Padding="5,3"
                                      Margin="0,0,0,8"
                                      ToolTip="Extrusion retraction length in millimeters"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                     TextChanged="DecimalTextBox_TextChanged"
+                                     LostFocus="DecimalTextBox_LostFocus"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -91,21 +97,25 @@
                             <!-- Support Sparsity -->
                             <TextBlock Text="Support Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="SupportSparsityTextBox"
+                                Tag="GREATER_ZERO"
                                 Text="8"
                                 Padding="5,3"
                                 Margin="0,0,0,8"
                                 ToolTip="Support sparsity factor (multiplied by nozzle diameter)"
                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                TextChanged="DecimalTextBox_TextChanged"
+                                LostFocus="DecimalTextBox_LostFocus"/>
 
                             <TextBlock Text="Support Speed:" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="SupportSpeedTextBox"
+                                 Tag="GREATER_ZERO"
                                  Text="50"
                                  Padding="5,3"
                                  Margin="0,0,0,8"
                                  ToolTip="Speed of printing the support sections in millimeters per second"
                                  PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                 DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                 TextChanged="DecimalTextBox_TextChanged"
+                                 LostFocus="DecimalTextBox_LostFocus"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -113,24 +123,26 @@
                     <GroupBox Header="Perimeter Settings" Padding="10" Margin="0,0,0,10" 
                         Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
                         <StackPanel>
-                            <!-- Number of Shells -->
+                            <!-- Amount of Shells -->
                             <TextBlock Text="Shells:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="ShellsTextBox" 
+                            <TextBox x:Name="ShellsTextBox"
+                                Tag="GREATER_ZERO"
                                 Text="3" 
                                 Padding="5,3"
                                 Margin="0,0,0,8"
-                                PreviewTextInput="ShellsTextBox_PreviewTextInput"
-                                TextChanged="ShellsTextBox_TextChanged"
-                                ToolTip="Number of perimeter shells (minimum 1)"/>
+                                PreviewTextInput="IntTextBox_PreviewTextInput"
+                                TextChanged="IntTextBox_TextChanged"
+                                ToolTip="Int of perimeter shells (minimum 1)"/>
                             <TextBlock Text="Shell Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="ShellSpeedTextBox"
+                                     Tag="GREATER_ZERO"
                                      Text="50"
                                      Padding="5,3"
                                      Margin="0,0,0,8"
                                      ToolTip="Speed of printing the perimeter shells in millimeters per second"
                                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
-
+                                     TextChanged="DecimalTextBox_TextChanged"
+                                     LostFocus="DecimalTextBox_LostFocus"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -138,23 +150,26 @@
                     <GroupBox Header="Roof Settings" Padding="10" Margin="0,0,0,10" 
                     Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
                         <StackPanel>
-                            <!-- Number of Roofs -->
+                            <!-- Int of Roofs -->
                             <TextBlock Text="Amount of Roofs:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="RoofAmountTextBox" 
+                            <TextBox x:Name="RoofAmountTextBox"
+                                Tag="GREATER_ZERO"
                                 Text="3" 
                                 Padding="5,3"
                                 Margin="0,0,0,8"
-                                PreviewTextInput="RoofsTextBox_PreviewTextInput"
-                                TextChanged="RoofsTextBox_TextChanged"
-                                ToolTip="Number of roofs (minimum 1)"/>
+                                PreviewTextInput="IntTextBox_PreviewTextInput"
+                                TextChanged="IntTextBox_TextChanged"
+                                ToolTip="Int of roofs (minimum 1)"/>
                             <TextBlock Text="Roof Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="RoofSpeedTextBox"
+                                 Tag="GREATER_ZERO"
                                  Text="50"
                                  Padding="5,3"
                                  Margin="0,0,0,8"
                                  ToolTip="Speed of printing the roof sections in millimeters per second"
                                  PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                 DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                 TextChanged="DecimalTextBox_TextChanged"
+                                 LostFocus="DecimalTextBox_LostFocus"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -162,23 +177,26 @@
                     <GroupBox Header="Floor Settings" Padding="10" Margin="0,0,0,10" 
                     Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
                         <StackPanel>
-                            <!-- Number of Shells -->
+                            <!-- Amount of Floors -->
                             <TextBlock Text="Amount of Floors:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="FloorAmountTextBox" 
+                            <TextBox x:Name="FloorAmountTextBox"
+                                Tag="GREATER_ZERO"
                                 Text="3" 
                                 Padding="5,3"
                                 Margin="0,0,0,8"
-                                PreviewTextInput="FloorsTextBox_PreviewTextInput"
-                                TextChanged="FloorsTextBox_TextChanged"
-                                ToolTip="Number of floors (minimum 1)"/>
+                                PreviewTextInput="IntTextBox_PreviewTextInput"
+                                TextChanged="IntTextBox_TextChanged"
+                                ToolTip="Int of floors (minimum 1)"/>
                             <TextBlock Text="Floor Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="FloorSpeedTextBox"
+                                Tag="GREATER_ZERO"
                                 Text="50"
                                 Padding="5,3"
                                 Margin="0,0,0,8"
                                 ToolTip="Speed of printing the floor sections in millimeters per second"
                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                TextChanged="DecimalTextBox_TextChanged"
+                                LostFocus="DecimalTextBox_LostFocus"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -189,21 +207,23 @@
                             <!-- Infill Sparsity -->
                             <TextBlock Text="Infill Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="InfillSparsityTextBox"
+                                     Tag="GREATER_ZERO"
                                      Text="5"
                                      Padding="5,3"
                                      Margin="0,0,0,8"
                                      ToolTip="Infill sparsity factor (multiplied by nozzle diameter)"
-                                     PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                     DataObject.Pasting="DecimalTextBox_Pasting"/>
-
+                                     PreviewTextInput="IntTextBox_PreviewTextInput"
+                                     TextChanged="IntTextBox_TextChanged"/>
                             <TextBlock Text="Infill Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="InfillSpeedTextBox"
+                                Tag="GREATER_ZERO"
                                 Text="50"
                                 Padding="5,3"
                                 Margin="0,0,0,8"
                                 ToolTip="Speed of printing the infill sections in millimeters per second"
                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+                                TextChanged="DecimalTextBox_TextChanged"
+                                LostFocus="DecimalTextBox_LostFocus"/>
                         </StackPanel>
                     </GroupBox>
 

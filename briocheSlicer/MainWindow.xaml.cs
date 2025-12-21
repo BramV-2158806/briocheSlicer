@@ -224,92 +224,12 @@ namespace briocheSlicer
             RedrawCurrentSlice();
         }
 
-        
-
         /// <summary>
-        /// Validates that only numeric input is allowed for the shells textbox.
+        /// Validates that only numeric input is allowed for the integer textboxes.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ShellsTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            // Only allow digits
-            e.Handled = !int.TryParse(e.Text, out _);
-        }
-
-        /// <summary>
-        /// Validates that the number of shells is at least 1.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ShellsTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (sender is TextBox textBox)
-            {
-                // If the text is empty or cannot be parsed as an integer
-                if (string.IsNullOrWhiteSpace(textBox.Text) || !int.TryParse(textBox.Text, out int shells))
-                {
-                    textBox.Background = Brushes.LightPink;
-                    return;
-                }
-
-                // If the number is less than 1, show validation error
-                if (shells < 1)
-                {
-                    textBox.Background = Brushes.LightPink;
-                }
-                else
-                {
-                    textBox.Background = Brushes.White;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Validates that only numeric input is allowed for the floors textbox.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void FloorsTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            // Only allow digits
-            e.Handled = !int.TryParse(e.Text, out _);
-        }
-
-        /// <summary>
-        /// Validates that the number of floors is at least 0.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void FloorsTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (sender is TextBox textBox)
-            {
-                // If the text is empty or cannot be parsed as an integer
-                if (string.IsNullOrWhiteSpace(textBox.Text) || !int.TryParse(textBox.Text, out int floors))
-                {
-                    textBox.Background = Brushes.LightPink;
-                    return;
-                }
-
-                // If the number is less than 0, show validation error
-                if (floors < 0)
-                {
-                    textBox.Background = Brushes.LightPink;
-                }
-                else
-                {
-                    textBox.Background = Brushes.White;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Validates that only numeric input is allowed for the roofs textbox.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void RoofsTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void IntTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             // Only allow digits
             e.Handled = !int.TryParse(e.Text, out _);
@@ -320,25 +240,38 @@ namespace briocheSlicer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void RoofsTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void IntTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (sender is TextBox textBox)
             {
                 // If the text is empty or cannot be parsed as an integer
-                if (string.IsNullOrWhiteSpace(textBox.Text) || !int.TryParse(textBox.Text, out int roofs))
+                if (string.IsNullOrWhiteSpace(textBox.Text) || !int.TryParse(textBox.Text, out int value))
                 {
                     textBox.Background = Brushes.LightPink;
                     return;
                 }
 
                 // If the number is less than 0, show validation error
-                if (roofs < 0)
+                if (value < 0)
                 {
                     textBox.Background = Brushes.LightPink;
                 }
                 else
                 {
                     textBox.Background = Brushes.White;
+                }
+
+                if ((string)textBox.Tag == "GREATER_ZERO")
+                {
+                    if (value <= 0)
+                    {
+                        textBox.Background = Brushes.LightPink;
+                        return;
+                    }
+                    else
+                    {
+                        textBox.Background = Brushes.White;
+                    }
                 }
             }
         }
@@ -434,7 +367,7 @@ namespace briocheSlicer
             string layerText = Normalize(LayerHeightTextBox.Text);
             if (!double.TryParse(layerText, NumberStyles.Float, CultureInfo.InvariantCulture, out double layerHeight) || layerHeight <= 0)
             {
-                MessageBox.Show("Please enter a valid layer height (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid LAYER HEIGHT (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -443,7 +376,7 @@ namespace briocheSlicer
             string nozzleText = Normalize(NozzleDiameterTextBox.Text);
             if (!double.TryParse(nozzleText, NumberStyles.Float, CultureInfo.InvariantCulture, out double nozzleDiameter) || nozzleDiameter <= 0)
             {
-                MessageBox.Show("Please enter a valid nozzle diameter (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid NOZZLE DIAMETER (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -452,31 +385,31 @@ namespace briocheSlicer
             string retracionText = Normalize(ExtrusionRetractionTextBox.Text);
             if (!double.TryParse(retracionText, NumberStyles.Float, CultureInfo.InvariantCulture, out double retractionLength) || retractionLength <= 0)
             {
-                MessageBox.Show("Please enter a valid extrusion retraction length (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid EXTRUSION RETRACTION LENGTH (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             // Validate number of shells input
-            if (!int.TryParse(ShellsTextBox.Text, out int shells) || shells < 1)
+            if (!int.TryParse(ShellsTextBox.Text, out int shells) || shells <= 0)
             {
-                MessageBox.Show("Please enter a valid number of shells (must be at least 1).",
+                MessageBox.Show("Please enter a valid NUMBER OF SHELLS (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             // Validate number of floors input
-            if (!int.TryParse(FloorAmountTextBox.Text, out int floors) || floors < 0)
+            if (!int.TryParse(FloorAmountTextBox.Text, out int floors) || floors <= 0)
             {
-                MessageBox.Show("Please enter a valid number of floors (must be at least 0).",
+                MessageBox.Show("Please enter a valid NUMBER OF FLOORS (must be at least 1).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             // Validate number of roofs input
-            if (!int.TryParse(RoofAmountTextBox.Text, out int roofs) || roofs < 0)
+            if (!int.TryParse(RoofAmountTextBox.Text, out int roofs) || roofs <= 0)
             {
-                MessageBox.Show("Please enter a valid number of roofs (must be at least 0).",
+                MessageBox.Show("Please enter a valid NUMBER OF ROOFS (must be at least 1).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -485,7 +418,7 @@ namespace briocheSlicer
             string infillSparsityText = Normalize(InfillSparsityTextBox.Text);
             if (!double.TryParse(infillSparsityText, NumberStyles.Float, CultureInfo.InvariantCulture, out double infillSparsity) || infillSparsity <= 0)
             {
-                MessageBox.Show("Please enter a valid infill sparsity (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid INFILL SPARSITY (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -494,7 +427,7 @@ namespace briocheSlicer
             string supportSparsityText = Normalize(SupportSparsityTextBox.Text);
             if (!double.TryParse(supportSparsityText, NumberStyles.Float, CultureInfo.InvariantCulture, out double supportSparsity) || supportSparsity <= 0)
             {
-                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid SUPPORT SPARSITY (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -504,7 +437,7 @@ namespace briocheSlicer
             string shellSpeedText = Normalize(ShellSpeedTextBox.Text);
             if (!double.TryParse(shellSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double shellspeed) || shellspeed <= 0)
             {
-                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid SHELL SPEED (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -513,7 +446,7 @@ namespace briocheSlicer
             string roofSpeedText = Normalize(RoofSpeedTextBox.Text);
             if (!double.TryParse(roofSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double roofspeed) || roofspeed <= 0)
             {
-                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid ROOF SPEED (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -522,7 +455,7 @@ namespace briocheSlicer
             string floorSpeedText = Normalize(FloorSpeedTextBox.Text);
             if (!double.TryParse(floorSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double floorspeed) || floorspeed <= 0)
             {
-                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid FLOOR SPEED (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -531,7 +464,7 @@ namespace briocheSlicer
             string infillSpeedText = Normalize(InfillSpeedTextBox.Text);
             if (!double.TryParse(infillSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double infillspeed) || infillspeed <= 0)
             {
-                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid INFILL SPEED (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -540,7 +473,7 @@ namespace briocheSlicer
             string supportSpeedText = Normalize(SupportSpeedTextBox.Text);
             if (!double.TryParse(supportSpeedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double supportspeed) || supportspeed <= 0)
             {
-                MessageBox.Show("Please enter a valid support sparsity (must be a number greater than 0).",
+                MessageBox.Show("Please enter a valid SUPPORT SPEED (must be a number greater than 0).",
                                 "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -584,7 +517,7 @@ namespace briocheSlicer
                 // altered brioche model that now includes the tree trunks
                 TreeSupportGenerator generator = new TreeSupportGenerator();
                 Model3DGroup trunkModels = generator.LetTheForrestGrow(pureModel);
-                
+
                 // Create a model with both the 
                 displayModel = new Model3DGroup();
                 displayModel.Children.Add(trunkModels);
@@ -643,10 +576,10 @@ namespace briocheSlicer
 
             // Get the Downloads folder path
             string downloadsPath = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), 
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 "Downloads"
             );
-            
+
             // Create filename with timestamp to avoid overwriting
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             string filename = $"brioche_slicer_output_{timestamp}.gcode";
@@ -832,6 +765,7 @@ namespace briocheSlicer
             }
         }
 
+        // Handles input for decimal textboxes, allowing only digits and one decimal separator
         private void DecimalTextBox_PreviewTextInput(object? sender, TextCompositionEventArgs e)
         {
             if (sender is not TextBox tb)
@@ -863,40 +797,73 @@ namespace briocheSlicer
             }
         }
 
-        private void DecimalTextBox_Pasting(object? sender, DataObjectPastingEventArgs e)
+        // Handles validation for decimal textboxes, '.' and ',' usage
+        private void DecimalTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox textBox)
+                return;
+
+            // Empty input → invalid
+            if (string.IsNullOrWhiteSpace(textBox.Text))
+            {
+                textBox.Background = Brushes.LightPink;
+                return;
+            }
+
+            // Normalize decimal separator for parsing
+            string text = textBox.Text
+                .Replace(
+                    CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator,
+                    CultureInfo.InvariantCulture.NumberFormat.NumberDecimalSeparator);
+
+            if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+            {
+                textBox.Background = Brushes.LightPink;
+                return;
+            }
+
+            if (value < 0)
+            {
+                textBox.Background = Brushes.LightPink;
+                return;
+            }
+            else
+            {
+                textBox.Background = Brushes.White;
+            }
+
+            if ((string)textBox.Tag == "GREATER_ZERO")
+            {
+                if (value <= 0)
+                {
+                    textBox.Background = Brushes.LightPink;
+                    return;
+                }
+                else
+                {
+                    textBox.Background = Brushes.White;
+                }
+            }
+        }
+
+        // Handles trailing '.' or ',' by removing it on focus loss
+        private void DecimalTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is not TextBox tb)
                 return;
 
-            if (!e.DataObject.GetDataPresent(DataFormats.Text)) return;
+            string text = tb.Text?.Trim() ?? "";
 
-            string paste = (string)e.DataObject.GetData(DataFormats.Text)!;
-            var decimalSep = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-
-            // Normalize any '.' or ',' to the current culture decimal separator
-            paste = paste.Replace(".", decimalSep).Replace(",", decimalSep);
-
-            // Prevent multiple decimal separators in the resulting text
-            string resulting = tb.Text.Remove(tb.SelectionStart, tb.SelectionLength).Insert(tb.SelectionStart, paste);
-            int sepCount = resulting.Count(c => c.ToString() == decimalSep);
-            if (sepCount > 1)
-            {
-                e.CancelCommand();
+            if (string.IsNullOrEmpty(text))
                 return;
-            }
 
-            // Validate the combined text parses as a number (allow empty leading/trailing)
-            string forParse = resulting.Replace(decimalSep, CultureInfo.InvariantCulture.NumberFormat.NumberDecimalSeparator);
-            if (!double.TryParse(forParse, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-            {
-                e.CancelCommand();
-                return;
-            }
+            text = text.Replace(',', '.');
 
-            // Apply normalized text and cancel default paste
-            tb.Text = resulting;
-            tb.SelectionStart = tb.SelectionStart + paste.Length;
-            e.CancelCommand();
+            // Remove trailing decimal separator
+            if (text.EndsWith("."))
+                text = text[..^1];
+
+            tb.Text = text;
         }
     }
 }
