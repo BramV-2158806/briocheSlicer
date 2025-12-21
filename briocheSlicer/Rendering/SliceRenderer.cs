@@ -15,7 +15,7 @@ namespace briocheSlicer.Rendering
     {
 
         // Function to transform PointD from model space to Point in Canvas space
-        // AI generated
+        // Ai was used to help make this functionality 
         private static Func<PointD, Point> CreateTransform(Canvas canvas, Rect bounds, double marginPercent)
         {
             double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : Math.Max(200, canvas.Width);
@@ -105,28 +105,6 @@ namespace briocheSlicer.Rendering
                     DrawClosedPath(canvas, path, tx, stroke, thickness);
                 else
                     DrawOpenPath(canvas, path, tx, stroke, thickness);
-            }
-        }
-
-        // Function to draw support structures
-        // Is a little different from other groups in that support paths can be closed or open
-        private static void DrawSupport(Canvas canvas, PathsD? support, Func<PointD, Point> tx, double strokePx)
-        {
-            if (support == null) return;
-
-            SolidColorBrush stroke = new SolidColorBrush(Color.FromRgb(90, 160, 255));
-
-            foreach (var path in support)
-            {
-                if (path == null || path.Count < 2) continue;
-
-                bool closed = path[0].x == path[^1].x &&
-                              path[0].y == path[^1].y;
-
-                if (closed)
-                    DrawClosedPath(canvas, path, tx, stroke, strokePx);
-                else
-                    DrawOpenPath(canvas, path, tx, stroke, strokePx * 0.8);
             }
         }
 
