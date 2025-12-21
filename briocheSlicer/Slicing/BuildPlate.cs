@@ -75,10 +75,5 @@ namespace briocheSlicer.Slicing
         {
             return model;
         }
-
-        public Point3D GetCenter()
-        {
-            return plateCenter;
-        }
     }
 }

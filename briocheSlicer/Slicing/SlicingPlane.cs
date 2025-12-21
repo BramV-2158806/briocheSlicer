@@ -98,14 +98,5 @@ namespace briocheSlicer.Slicing
             Update_Model_Position(newCenter);
         }
 
-        public Point3D GetCenter()
-        {
-            return planeCenter;
-        }
-
-        public double GetZ()
-        {
-            return planeCenter.Z;
-        }
     }
 }
