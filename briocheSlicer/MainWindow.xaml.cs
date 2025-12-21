@@ -54,6 +54,7 @@ namespace briocheSlicer
             };
         }
 
+        // AI assisted full-screen toggle method
         private void ToggleFullScreen()
         {
             if (this.WindowStyle == WindowStyle.SingleBorderWindow)
@@ -229,7 +230,7 @@ namespace briocheSlicer
         }
 
         /// <summary>
-        /// Validates that the number of roofs is at least 0.
+        /// Validates that the integer text value is at least 0.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -244,7 +245,7 @@ namespace briocheSlicer
                     return;
                 }
 
-                // If the number is less than 0, show validation error
+                // If the number is 0 or less, show validation error
                 if (value <= 0)
                 {
                     textBox.Background = Brushes.LightPink;
@@ -295,8 +296,6 @@ namespace briocheSlicer
                 return;
             }
             TreeSupportCheckBox.IsChecked = true;
-
-            // Disable support pattern selection when tree support is enabled
             SupportPatternPanel.IsEnabled = false;
         }
 
