@@ -470,7 +470,6 @@ namespace briocheSlicer
 
             // Slice entire object with given parameters
             slicer.Set_Layer_Height(layerHeight);
-            slicer.Set_Nozzle_Diameter(nozzleDiameter);
             gcodeSettings.LayerHeight = layerHeight;
             gcodeSettings.NozzleDiameter = nozzleDiameter;
             gcodeSettings.ExtrusionRetractLength = retractionLength;

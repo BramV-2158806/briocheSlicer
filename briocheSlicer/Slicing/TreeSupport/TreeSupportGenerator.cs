@@ -56,12 +56,12 @@ namespace briocheSlicer.Slicing.TreeSupport
 
             // Clip the trunk mesh at the model's lowest Z point
             float modelMinZ = modelMesh.BoundingBox.Min.Z;
-            Mesh floorClippedMesh = MeshUtils.ClipMeshAtHeight(shrunkMesh, modelMinZ);
+            Mesh floorClippedMesh = MeshUtils.ClipMeshAtHeight(lowerdMesh, modelMinZ);
 
             // Convert back to helix model.
-            Model3DGroup clippedTrunkModel = MeshUtils.ToHelixModel(floorClippedMesh);
+            Model3DGroup finalTrunkModel = MeshUtils.ToHelixModel(floorClippedMesh);
 
-            return clippedTrunkModel;
+            return finalTrunkModel;
         }
 
         private List<SeedPoint> SearchForSeeds(Model3D model)
