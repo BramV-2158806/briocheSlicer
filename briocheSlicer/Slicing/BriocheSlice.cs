@@ -312,6 +312,11 @@ namespace briocheSlicer.Slicing
 
         public PathsD Generate_Support(PathsD perimeterAndSupportUpper, int layerIndex,bool isTopLayer = false)
         {
+            if (!settings.SupportEnabled || settings.TreeSupportEnabled)
+            {
+                return new PathsD();
+            }
+
             // Check that phase 1 was completed
             if (this.outerLayer == null || this.shells == null || GetInnerShell() == null)
             {
@@ -340,8 +345,7 @@ namespace briocheSlicer.Slicing
             double negativeOffset = -settings.NozzleDiameter;
             var offsettedSupportRegion = Clipper.InflatePaths(this.supportRegion, negativeOffset, JoinType.Round, EndType.Polygon);
 
-
-            this.support = GenerateBoundedPattern(offsettedSupportRegion, InfillPattern.Cross, layerIndex);
+            this.support = GenerateBoundedPattern(offsettedSupportRegion, settings.SupportType, layerIndex);
             this.support = Clipper.SimplifyPaths(this.support, 1e-9, false);
             return this.support;
 
@@ -378,9 +382,7 @@ namespace briocheSlicer.Slicing
             return result;
         }
 
-        public enum InfillPattern { Horizontal, Cross}
-
-        private PathsD GenerateBoundedPattern(PathsD infillRegion, InfillPattern pattern, int layerIndex = -1)
+        private PathsD GenerateBoundedPattern(PathsD infillRegion, GcodeSettings.InfillPattern pattern, int layerIndex = -1)
         {
             // Create the infill bounding box that minimally cover the infill region
             var spacing = settings.NozzleDiameter;
@@ -401,7 +403,7 @@ namespace briocheSlicer.Slicing
             // Create basic infill lines
             PathsD grid = new PathsD();
 
-            if (pattern == InfillPattern.Horizontal)
+            if (pattern == GcodeSettings.InfillPattern.Horizontal)
             {
                 for (double y = miny; y <= maxy; y += spacing)
                 {
@@ -413,27 +415,30 @@ namespace briocheSlicer.Slicing
                     grid.Add(line);
                 }
             }
-            else if (pattern == InfillPattern.Cross)
+            else if (pattern == GcodeSettings.InfillPattern.Rectilinear)
             {
-                PointD center = new PointD((minx + maxx) / 2.0, (miny + maxy) / 2.0);
-
                 // 1. Create horizontal lines (unrotated before clipping)
                 if (layerIndex != -1)
                 {
                     if (layerIndex % 2 == 0)
                     {
-                        grid = addHorizontalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
+                        grid = addHorizontalLinesToGrid(grid, minx, maxx, miny, maxy, spacing);
                     }
                     else
                     {
-                        grid = addVerticalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
+                        grid = addVerticalLinesToGrid(grid, minx, maxx, miny, maxy, spacing);
                     }
                 }
                 else
                 {
-                    grid = addHorizontalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
-                    grid = addVerticalLinesToGrid(grid, minx, maxx, miny, maxy, spacing, layerIndex);
+                    grid = addHorizontalLinesToGrid(grid, minx, maxx, miny, maxy, spacing);
+                    grid = addVerticalLinesToGrid(grid, minx, maxx, miny, maxy, spacing);
                 }
+            }
+            else if (pattern == GcodeSettings.InfillPattern.Honeycomb)
+            {
+                grid = FillGridWithHoneyComb(grid, minx*1.10, maxx, miny, maxy*1.10, spacing); 
+                grid = Clipper.SimplifyPaths(grid, 1e-9, isClosedPath: false);
             }
 
             // Clip the infill lines to the infill region
@@ -451,7 +456,7 @@ namespace briocheSlicer.Slicing
         }
 
 
-        private PathsD addHorizontalLinesToGrid(PathsD grid, double minx, double maxx, double miny, double maxy, double spacing, int layerIndex)
+        private PathsD addHorizontalLinesToGrid(PathsD grid, double minx, double maxx, double miny, double maxy, double spacing)
         {
             for (double y = miny; y <= maxy; y += spacing)
             {
@@ -462,7 +467,7 @@ namespace briocheSlicer.Slicing
             return grid;
         }
 
-        private PathsD addVerticalLinesToGrid(PathsD grid, double minx, double maxx, double miny, double maxy, double spacing, int layerIndex)
+        private PathsD addVerticalLinesToGrid(PathsD grid, double minx, double maxx, double miny, double maxy, double spacing)
         {
             // 2. Create vertical lines
             for (double x = minx; x <= maxx; x += spacing)
@@ -471,6 +476,56 @@ namespace briocheSlicer.Slicing
                 var p1 = new PointD(x, maxy);
                 grid.Add(new PathD { p0, p1 });
             }
+            return grid;
+        }
+
+        private PathsD CreateHoneyComb(double x, double y, double size)
+        {
+            double height = size * 2;
+            double width = Math.Sqrt(3) * size;
+            double halfHeight = size;
+            double halfWidth = width / 2.0;
+            PathsD hexagon = new PathsD();
+
+            hexagon.Add(new PathD
+            {
+                new PointD(x, y + halfHeight),
+                new PointD(x + halfWidth, y + halfHeight / 2.0),
+                new PointD(x + halfWidth, y - halfHeight / 2.0),
+                new PointD(x, y - halfHeight),
+                new PointD(x - halfWidth, y - halfHeight / 2.0),
+                new PointD(x - halfWidth, y + halfHeight / 2.0),
+                new PointD(x, y + halfHeight)
+            });
+
+            return hexagon;
+        }
+
+        private PathsD FillGridWithHoneyComb(PathsD grid, double minx, double maxx, double miny, double maxy, double size)
+        {
+            double x_spacing = Math.Sqrt(3) * size;
+            double y_spacing = size * 1.5;
+            PathsD hexagon;
+            bool ShouldInset = false;
+
+            for (double y = miny; y < maxy; y+= y_spacing)
+            {
+
+                for (double x = minx; x < maxx; x += x_spacing)
+                {
+                    if (ShouldInset)
+                    {
+                        hexagon = CreateHoneyComb(x + x_spacing / 2, y, size);
+                    }
+                    else
+                    {
+                        hexagon = CreateHoneyComb(x, y, size);
+                    }
+                    grid.AddRange(hexagon);
+                }
+                ShouldInset = !ShouldInset;
+            }
+
             return grid;
         }
 
@@ -499,7 +554,7 @@ namespace briocheSlicer.Slicing
             this.infillRegion = infillRegion;
 
             // Remove degenerate lines and points and return the infill
-            this.infill = GenerateBoundedPattern(infillRegion, InfillPattern.Cross, -1);
+            this.infill = GenerateBoundedPattern(infillRegion, settings.InfillType, -1);
             return this.infill;
         }
 

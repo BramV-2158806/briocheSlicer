@@ -73,19 +73,39 @@
                         <StackPanel>
                             <!-- Support Section -->
                             <CheckBox x:Name="SupportCheckBox"
-                                Content="Enable Support"
                                 IsChecked="True"
+                                Content="Enable Support"
+                                Checked="SupportCheckBox_Checked"
+                                Unchecked="SupportCheckBox_Unchecked"
                                 Margin="0,8,0,8"
                                 FontWeight="Bold"
                                 ToolTip="Enable support structures"/>
                             <!-- Tree Support -->
                             <CheckBox x:Name="TreeSupportCheckBox"
                                 Content="Tree Support"
-                                IsEnabled="{Binding IsChecked, ElementName=SupportCheckBox}"
+                                Checked="HandleTreeSupportCheckbox_Check"
                                 IsChecked="False"
                                 Margin="0,8,0,8"
                                 FontWeight="Bold"
                                 ToolTip="Enable tree support structures"/>
+                            <!-- Support Sparsity -->
+                            <TextBlock Text="Support Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="SupportSparsityTextBox"
+                                Text="8"
+                                Padding="5,3"
+                                Margin="0,0,0,8"
+                                ToolTip="Support sparsity factor (multiplied by nozzle diameter)"
+                                PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+
+                            <TextBlock Text="Support Speed:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="SupportSpeedTextBox"
+                                 Text="50"
+                                 Padding="5,3"
+                                 Margin="0,0,0,8"
+                                 ToolTip="Speed of printing the support sections in millimeters per second"
+                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
+                                 DataObject.Pasting="DecimalTextBox_Pasting"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -163,7 +183,7 @@
                     </GroupBox>
 
                     <!-- Infill and Support Settings -->
-                    <GroupBox Header="Infill" Padding="10" Margin="0,0,0,10" 
+                    <GroupBox Header="Infill Settings" Padding="10" Margin="0,0,0,10" 
                         Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
                         <StackPanel>
                             <!-- Infill Sparsity -->
@@ -184,26 +204,43 @@
                                 ToolTip="Speed of printing the infill sections in millimeters per second"
                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
                                 DataObject.Pasting="DecimalTextBox_Pasting"/>
+                        </StackPanel>
+                    </GroupBox>
 
-                            <!-- Support Sparsity -->
-                            <TextBlock Text="Support Sparsity:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="SupportSparsityTextBox"
-                                Text="8"
-                                Padding="5,3"
-                                Margin="0,0,0,8"
-                                ToolTip="Support sparsity factor (multiplied by nozzle diameter)"
-                                PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                DataObject.Pasting="DecimalTextBox_Pasting"/>
+                    <GroupBox Header="Infill Pattern" Margin="8">
+                        <StackPanel x:Name="InfillPatternPanel">
+                            <RadioButton
+                                x:Name="HorizontalInfillButton"
+                                Content="Horizontal"
+                                GroupName="InfillPattern"
+                                />
+                            <RadioButton
+                                x:Name="RectilinearInfillButton"
+                                Content="Rectilinear"
+                                GroupName="InfillPattern"
+                                IsChecked="True"
+                                />        
+                            <RadioButton
+                                x:Name="HoneycombInfillButton"
+                                Content="Honeycomb"
+                                GroupName="InfillPattern"
+                                />
+                        </StackPanel>
+                    </GroupBox>
 
-                            <TextBlock Text="Support Speed:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBox x:Name="SupportSpeedTextBox"
-                                 Text="50"
-                                 Padding="5,3"
-                                 Margin="0,0,0,8"
-                                 ToolTip="Speed of printing the support sections in millimeters per second"
-                                 PreviewTextInput="DecimalTextBox_PreviewTextInput"
-                                 DataObject.Pasting="DecimalTextBox_Pasting"/>
-                            
+                    <GroupBox Header="Support Pattern" Margin="8">
+                        <StackPanel x:Name="SupportPatternPanel">
+                            <RadioButton
+                                x:Name="RectilinearSupportButton"
+                                Content="Rectilinear"
+                                GroupName="SupportPattern"
+                                IsChecked="True"
+                                />
+                            <RadioButton
+                                x:Name="HoneycombSupportButton"
+                                Content="Honeycomb"
+                                GroupName="SupportPattern"
+                                />
                         </StackPanel>
                     </GroupBox>
 
