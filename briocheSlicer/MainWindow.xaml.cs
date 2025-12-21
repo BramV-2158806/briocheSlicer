@@ -21,6 +21,13 @@ namespace briocheSlicer
     /// </summary>
     public partial class MainWindow : Window
     {
+        public enum InfillPattern
+        {
+            Rectilinear,
+            Horizontal,
+            Honeycomb
+        }
+
         private TheSlicer slicer;
         private TheCodeGenerator codeGenerator;
 
@@ -31,6 +38,8 @@ namespace briocheSlicer
         private GcodeSettings gcodeSettings;
 
         private BuildPlate? buildPlate;
+
+        private bool HasSliced { get; set; }
 
         public MainWindow()
         {
@@ -335,6 +344,82 @@ namespace briocheSlicer
             }
         }
 
+        private void HandleInfillPattern()
+        {
+            RadioButton rb = InfillPatternPanel.Children
+                .OfType<RadioButton>()
+                .FirstOrDefault(r => r.IsChecked == true)!;
+
+            if (rb.Name == "HorizontalInfillButton")
+            {
+                gcodeSettings.InfillType = GcodeSettings.InfillPattern.Horizontal;
+            }
+            else if (rb.Name == "RectilinearInfillButton")
+            {
+                gcodeSettings.InfillType = GcodeSettings.InfillPattern.Rectilinear;
+            }
+            else if (rb.Name == "HoneycombInfillButton")
+            {
+                gcodeSettings.InfillType = GcodeSettings.InfillPattern.Honeycomb;
+            }
+        }
+
+        private void SupportCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (TreeSupportCheckBox == null || SupportPatternPanel == null)
+                return;
+
+            TreeSupportCheckBox.IsEnabled = true;
+            SupportPatternPanel.IsEnabled = true;
+        }
+
+        private void HandleTreeSupportCheckbox_Check(object sender, RoutedEventArgs e)
+        {
+            if (HasSliced)
+            {
+                MessageBox.Show("Rebuild the application for Tree Support after slicing previous models!",
+                                "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                TreeSupportCheckBox.IsChecked = false;
+                return;
+            }
+            TreeSupportCheckBox.IsChecked = true;
+
+            // Disable support pattern selection when tree support is enabled
+            SupportPatternPanel.IsEnabled = false;
+        }
+
+        private void SupportCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (TreeSupportCheckBox == null || SupportPatternPanel == null)
+                return;
+
+            TreeSupportCheckBox.IsChecked = false;
+            TreeSupportCheckBox.IsEnabled = false;
+            SupportPatternPanel.IsEnabled = false;
+        }
+
+        private void HandleSupportPattern()
+        {
+            if (SupportCheckBox.IsChecked != true)
+            {
+                gcodeSettings.SupportEnabled = false;
+                return;
+            }
+
+            RadioButton rb = SupportPatternPanel.Children
+                .OfType<RadioButton>()
+                .FirstOrDefault(r => r.IsChecked == true)!;
+
+            if (rb.Name == "RectilinearSupportButton")
+            {
+                gcodeSettings.SupportType = GcodeSettings.InfillPattern.Rectilinear;
+            }
+            else if (rb.Name == "HoneycombSupportButton")
+            {
+                gcodeSettings.SupportType = GcodeSettings.InfillPattern.Honeycomb;
+            }
+        }
+
         /// <summary>
         /// Handles the Slice button click event.
         /// Validates inputs and initiates the slicing process.
@@ -486,6 +571,8 @@ namespace briocheSlicer
             gcodeSettings.InfillSpeed = infillspeed;
             gcodeSettings.SupportSpeed = supportspeed;
             gcodeSettings.SupportEnabled = SupportCheckBox.IsChecked == true;
+            HandleInfillPattern();
+            HandleSupportPattern();
 
             // Enable the slice height slider
             SliceHeightSlider.IsEnabled = true;
@@ -529,6 +616,7 @@ namespace briocheSlicer
 
             // Slice the model
             briocheModel = slicer.Slice_Model(displayModel, gcodeSettings);
+            HasSliced = true;
 
             // Reset slice plane to middle of object to show new slice with updated settings
             SliceHeightSlider.Value = briocheModel.amount_Layers / 2;
@@ -751,7 +839,6 @@ namespace briocheSlicer
             if (sender is not TextBox tb)
                 return;
 
-            // Allow only digits, group/decimal separators and single decimal separator
             var input = e.Text;
             var decimalSep = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
             if (input == "." || input == ",")
@@ -763,7 +850,6 @@ namespace briocheSlicer
                     return;
                 }
 
-                // Insert the culture decimal separator at the caret (replace selection)
                 int selStart = tb.SelectionStart;
                 int selLen = tb.SelectionLength;
                 string newText = tb.Text.Remove(selStart, selLen).Insert(selStart, decimalSep);
@@ -773,7 +859,6 @@ namespace briocheSlicer
                 return;
             }
 
-            // Allow digits; block other characters
             if (!char.IsDigit(input, 0))
             {
                 e.Handled = true;

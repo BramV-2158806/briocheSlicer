@@ -11,6 +11,8 @@ namespace briocheSlicer.Gcode
     /// </summary>
     internal class GcodeSettings
     {
+        public enum InfillPattern { Horizontal, Rectilinear, Honeycomb }
+
         public double NozzleDiameter { get; set; }
         public double LayerHeight { get; set; }
         public double PrintSpeed { get; set; }
@@ -39,6 +41,9 @@ namespace briocheSlicer.Gcode
         public bool SupportEnabled { get; set; }
         public bool TreeSupportEnabled { get; set; }
 
+        public InfillPattern InfillType { get; set; }
+        public InfillPattern SupportType { get; set; }
+
         public GcodeSettings(
             double nozzleDiameter = 0.4,
             double layerHeight = 0.2,
@@ -59,7 +64,9 @@ namespace briocheSlicer.Gcode
             double supportSparsity = 8,
             double extrusionRectrectionLength = 0.2,
             bool treeSupportEnabled = false,
-            bool supportEnabled = true
+            bool supportEnabled = true,
+            InfillPattern infillType = InfillPattern.Rectilinear,
+            InfillPattern supportType = InfillPattern.Rectilinear
             )
         {
             NozzleDiameter = nozzleDiameter;
@@ -82,6 +89,8 @@ namespace briocheSlicer.Gcode
             ExtrusionRetractLength = extrusionRectrectionLength;
             TreeSupportEnabled = treeSupportEnabled;
             SupportEnabled = supportEnabled;
+            InfillType = infillType;
+            SupportType = supportType;
         }
     }
 }
