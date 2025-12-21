@@ -15,7 +15,6 @@ namespace briocheSlicer.Slicing
     {
         private List<BriocheSlice> layers;
         private GcodeSettings settings;
-        private int[] layersAboveSupport;
         public readonly int amount_Layers;
         public readonly double offset_x;
         public readonly double offset_y;

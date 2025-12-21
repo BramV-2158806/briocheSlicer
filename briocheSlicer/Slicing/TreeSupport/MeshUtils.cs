@@ -111,21 +111,24 @@ namespace briocheSlicer.Slicing.TreeSupport
             return resultMesh;
         }
 
-        public static Mesh ClipMeshAtHeight(Mesh inputMesh, float minZ)
+        public static Mesh ClipMeshAtHeight(Mesh inputMesh, float minZ, float epsilon = 0.01f)
         {
-            // Create a large box that extends from minZ down to far below
+            // Add a small epsilon to ensure we cut slightly above minZ to avoid floating point issues
+            float cutHeight = minZ + epsilon;
+            
+            // Create a large box that extends from cutHeight upward (keeping everything above)
             float size = 10000.0f;
             float halfSize = size / 2.0f;
 
             string objContent = $@"
-                v {-halfSize} {-halfSize} {minZ - size}
-                v {halfSize} {-halfSize} {minZ - size}
-                v {halfSize} {halfSize} {minZ - size}
-                v {-halfSize} {halfSize} {minZ - size}
-                v {-halfSize} {-halfSize} {minZ}
-                v {halfSize} {-halfSize} {minZ}
-                v {halfSize} {halfSize} {minZ}
-                v {-halfSize} {halfSize} {minZ}
+                v {-halfSize} {-halfSize} {cutHeight}
+                v {halfSize} {-halfSize} {cutHeight}
+                v {halfSize} {halfSize} {cutHeight}
+                v {-halfSize} {halfSize} {cutHeight}
+                v {-halfSize} {-halfSize} {cutHeight + size}
+                v {halfSize} {-halfSize} {cutHeight + size}
+                v {halfSize} {halfSize} {cutHeight + size}
+                v {-halfSize} {halfSize} {cutHeight + size}
                 f 1 4 3 2
                 f 5 6 7 8
                 f 1 2 6 5
@@ -138,10 +141,11 @@ namespace briocheSlicer.Slicing.TreeSupport
             try
             {
                 File.WriteAllText(tempPath, objContent);
-                Mesh cutoffBox = MeshLoad.FromAnySupportedFormat(tempPath);
+                Mesh keepBox = MeshLoad.FromAnySupportedFormat(tempPath);
                 
-                // Remove everything below minZ
-                var result = Boolean(inputMesh, cutoffBox, BooleanOperation.DifferenceAB);
+                // We calculate the intersection of the box (from min up) and the model.
+                // this should be the model withouth the stuf under min z.
+                var result = Boolean(inputMesh, keepBox, BooleanOperation.Intersection);
                 return result.mesh;
             }
             finally
