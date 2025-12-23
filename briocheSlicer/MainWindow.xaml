@@ -109,7 +109,7 @@
                             <TextBlock Text="Support Speed:" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="SupportSpeedTextBox"
                                  Tag="GREATER_ZERO"
-                                 Text="50"
+                                 Text="200"
                                  Padding="5,3"
                                  Margin="0,0,0,8"
                                  ToolTip="Speed of printing the support sections in millimeters per second"
@@ -136,7 +136,7 @@
                             <TextBlock Text="Shell Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="ShellSpeedTextBox"
                                      Tag="GREATER_ZERO"
-                                     Text="50"
+                                     Text="200"
                                      Padding="5,3"
                                      Margin="0,0,0,8"
                                      ToolTip="Speed of printing the perimeter shells in millimeters per second"
@@ -163,7 +163,7 @@
                             <TextBlock Text="Roof Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="RoofSpeedTextBox"
                                  Tag="GREATER_ZERO"
-                                 Text="50"
+                                 Text="200"
                                  Padding="5,3"
                                  Margin="0,0,0,8"
                                  ToolTip="Speed of printing the roof sections in millimeters per second"
@@ -190,7 +190,7 @@
                             <TextBlock Text="Floor Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="FloorSpeedTextBox"
                                 Tag="GREATER_ZERO"
-                                Text="50"
+                                Text="200"
                                 Padding="5,3"
                                 Margin="0,0,0,8"
                                 ToolTip="Speed of printing the floor sections in millimeters per second"
@@ -217,7 +217,7 @@
                             <TextBlock Text="Infill Speed (mm/s):" FontWeight="Bold" Margin="0,0,0,5"/>
                             <TextBox x:Name="InfillSpeedTextBox"
                                 Tag="GREATER_ZERO"
-                                Text="50"
+                                Text="200"
                                 Padding="5,3"
                                 Margin="0,0,0,8"
                                 ToolTip="Speed of printing the infill sections in millimeters per second"

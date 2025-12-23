@@ -96,8 +96,6 @@ namespace briocheSlicer.Gcode
             {
                 if (path == null || path.Count < 2) continue;
 
-                retractHelper.Reset(gcode, currentExtrusion);
-
                 // Calculate the position of the first point
                 var firstPoint = path[0];
                 double firstX = firstPoint.x + model!.offset_x;
@@ -108,6 +106,8 @@ namespace briocheSlicer.Gcode
                 bool isHopNeeded = IsHopNeeded(firstX, firstY, prevX, prevY);
 
                 // Start hop
+                retractHelper.Retract(gcode, currentExtrusion);
+                timeEstimator.AddRetract();
                 if (hopEnabled && isHopNeeded)
                 {
                     timeEstimator.AddZMove(extrusionHeight + 1, settings.TravelSpeed);
@@ -124,6 +124,7 @@ namespace briocheSlicer.Gcode
                     gcode.AppendLine(Invariant($"G1 F{settings.TravelSpeed * 60:F0} Z{extrusionHeight}"));
                     timeEstimator.AddZMove(extrusionHeight + 1, settings.TravelSpeed);
                 }
+                retractHelper.Reset(gcode, currentExtrusion);
 
 
                 // Extrude along the lines
@@ -158,9 +159,6 @@ namespace briocheSlicer.Gcode
 
                     gcode.AppendLine(Invariant($"G1 F{printSpeed * printMultiplier:F0} X{startPoint.x + model.offset_x:F3} Y{startPoint.y + model.offset_y:F3} E{lastExtrusion:F5}"));
                 }
-
-                retractHelper.Retract(gcode, currentExtrusion);
-                timeEstimator.AddRetract();
             }
         }
 

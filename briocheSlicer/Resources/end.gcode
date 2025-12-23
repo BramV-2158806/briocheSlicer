@@ -20,7 +20,6 @@ G392 S0 ;turn off nozzle clog detect
 M400 ; wait for buffer to clear
 G92 E0 ; zero the extruder
 G1 E-0.8 F1800 ; retract
-G1 Z48.5 F900 ; lower z a little
 G1 X0 Y127.999 F18000 ; move to safe pos
 G1 X-13.0 F3000 ; move to safe pos
 
